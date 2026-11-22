@@ -15,6 +15,8 @@ final class DocumentFactory
             (int) $row[DocumentsRepository::FIELD_ID],
             (int) $row[DocumentsRepository::FIELD_TYPE_ID],
             $row[DocumentsRepository::FIELD_TRANSLIT],
+            $row[DocumentsRepository::FIELD_CREATED_AT],
+            $row[DocumentsRepository::FIELD_UPDATED_AT],
         );
     }
 }

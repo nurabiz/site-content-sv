@@ -21,10 +21,11 @@ final readonly class DocumentsRepository
     public const string FIELD_DOC_ID = 'doc_id';
     public const string FIELD_LOCALE = 'locale';
     public const string FIELD_DOC_CONTENT = 'doc_content';
+    public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
 
-    private const string DOCUMENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_TYPE_ID.', '.self::FIELD_TRANSLIT;
-    private const string CONTENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_LOCALE.', '.self::FIELD_DOC_CONTENT.', '.self::FIELD_UPDATED_AT;
+    private const string DOCUMENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_TYPE_ID.', '.self::FIELD_TRANSLIT.', '.self::FIELD_CREATED_AT.', '.self::FIELD_UPDATED_AT;
+    private const string CONTENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_LOCALE.', '.self::FIELD_DOC_CONTENT.', '.self::FIELD_CREATED_AT.', '.self::FIELD_UPDATED_AT;
 
     public function __construct(
         private Connection      $connection,
@@ -53,13 +54,15 @@ final readonly class DocumentsRepository
     {
         return array_map($this->docsFactory->fromRow(...), $this->connection->fetchAllAssociative(
             \sprintf(
-                'SELECT d.%s, d.%s, d.%s FROM %s d
+                'SELECT d.%s, d.%s, d.%s, d.%s, d.%s FROM %s d
              WHERE d.%s = :translit AND EXISTS (
                  SELECT 1 FROM %s c WHERE c.%s = d.%s AND c.%s = :lang_id
              ) LIMIT 2',
                 self::FIELD_ID,
                 self::FIELD_TYPE_ID,
                 self::FIELD_TRANSLIT,
+                self::FIELD_CREATED_AT,
+                self::FIELD_UPDATED_AT,
                 self::TABLE_NAME,
                 self::FIELD_TRANSLIT,
                 self::CONTENT_TABLE_NAME,
@@ -82,7 +85,7 @@ final readonly class DocumentsRepository
             );
 
             $id = (int) $this->connection->lastInsertId();
-            $doc = $this->docsFactory->fromRow($row + [self::FIELD_ID => $id]);
+            $doc = $this->find($id) ?? throw new \LogicException('The inserted document could not be read.');
             $this->writeLocales($id, $locales);
 
             return $doc->withLocales($this->listForDoc($doc));
@@ -103,10 +106,11 @@ final readonly class DocumentsRepository
 
             $this->connection->executeStatement(
                 \sprintf(
-                    'UPDATE %s SET %s = :type_id, %s = :translit WHERE %s = :id',
+                    'UPDATE %s SET %s = :type_id, %s = :translit, %s = CURRENT_TIMESTAMP(6) WHERE %s = :id',
                     self::TABLE_NAME,
                     self::FIELD_TYPE_ID,
                     self::FIELD_TRANSLIT,
+                    self::FIELD_UPDATED_AT,
                     self::FIELD_ID,
                 ),
                 ['type_id' => $typeId, 'translit' => $translit, 'id' => $id],
@@ -287,7 +291,7 @@ final readonly class DocumentsRepository
 
     public function createLocale(Document $doc, string $langId, string $content): DocumentContent
     {
-        $row = [self::FIELD_LOCALE => $langId, self::FIELD_DOC_CONTENT => $content];
+        $row = ['lang_id' => $langId, 'doc_content' => $content];
         $this->connection->executeStatement(
             \sprintf(
                 'INSERT INTO %s (%s, %s, %s, %s) VALUES (:doc_id, :lang_id, :doc_content, CURRENT_TIMESTAMP(6))',

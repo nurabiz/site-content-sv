@@ -1,4 +1,7 @@
 @json = application/json
+@siteContentDocId = 1
+@siteContentDocTranslit = terms_of_use
+@siteContentLocaleId = ru
 
 # Измените baseUrl при необходимости. Запускайте запросы сверху вниз.
 # Запросы записи и удаления используют ID документа, созданного в этом файле.

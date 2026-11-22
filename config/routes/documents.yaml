@@ -1,27 +1,27 @@
 docs_list:
     path: /docs
-    controller: NuraBiz\SiteContent\Controller\DocsController::list
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::list
     methods: GET
     defaults:
         _format: json
 
 docs_types:
     path: /docs/types
-    controller: NuraBiz\SiteContent\Controller\DocsController::types
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::types
     methods: GET
     defaults:
         _format: json
 
 docs_locales:
     path: /docs/locales
-    controller: NuraBiz\SiteContent\Controller\DocsController::locales
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::locales
     methods: GET
     defaults:
         _format: json
 
 docs_get_by_translit:
     path: /docs/translit/{translit}/{langId}
-    controller: NuraBiz\SiteContent\Controller\DocsController::getByTranslit
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::getByTranslit
     methods: GET
     defaults:
         _format: json
@@ -30,14 +30,14 @@ docs_get_by_translit:
 
 docs_create:
     path: /docs
-    controller: NuraBiz\SiteContent\Controller\DocsController::create
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::create
     methods: POST
     defaults:
         _format: json
 
 docs_get:
     path: /docs/{id}
-    controller: NuraBiz\SiteContent\Controller\DocsController::get
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::get
     methods: GET
     defaults:
         _format: json
@@ -46,7 +46,7 @@ docs_get:
 
 docs_update:
     path: /docs/{id}
-    controller: NuraBiz\SiteContent\Controller\DocsController::update
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::update
     methods: PUT
     defaults:
         _format: json
@@ -55,7 +55,7 @@ docs_update:
 
 docs_delete:
     path: /docs/{id}
-    controller: NuraBiz\SiteContent\Controller\DocsController::delete
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::delete
     methods: DELETE
     defaults:
         _format: json

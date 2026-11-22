@@ -12,6 +12,8 @@ readonly class Document
         private int    $id,
         private int    $typeId,
         private string $translit,
+        private string $createdAt,
+        private string $updatedAt,
         /** @var list<DocumentContent>|null */
         private ?array $locales = null,
     )
@@ -26,7 +28,7 @@ readonly class Document
     /** @param list<DocumentContent> $locales */
     public function withLocales(array $locales): self
     {
-        return new self($this->id, $this->typeId, $this->translit, $locales);
+        return new self($this->id, $this->typeId, $this->translit, $this->createdAt, $this->updatedAt, $locales);
     }
 
     public function toArray(): array
@@ -34,7 +36,9 @@ readonly class Document
         $data = [
             DocumentsRepository::FIELD_ID => $this->id,
             DocumentsRepository::FIELD_TYPE_ID => $this->typeId,
-            DocumentsRepository::FIELD_TRANSLIT => $this->translit
+            DocumentsRepository::FIELD_TRANSLIT => $this->translit,
+            DocumentsRepository::FIELD_CREATED_AT => $this->createdAt,
+            DocumentsRepository::FIELD_UPDATED_AT => $this->updatedAt,
         ];
         if (null !== $this->locales) {
             $data['locales'] = array_map(static fn (DocumentContent $locale): array => $locale->toArray(), $this->locales);

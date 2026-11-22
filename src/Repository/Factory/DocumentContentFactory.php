@@ -17,6 +17,7 @@ final class DocumentContentFactory
             $doc->getId(),
             $row[DocumentsRepository::FIELD_LOCALE],
             $row[DocumentsRepository::FIELD_DOC_CONTENT],
+            $row[DocumentsRepository::FIELD_CREATED_AT],
             $row[DocumentsRepository::FIELD_UPDATED_AT],
         );
     }

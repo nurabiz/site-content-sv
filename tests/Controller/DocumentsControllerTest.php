@@ -6,7 +6,7 @@ namespace NuraBiz\SiteContent\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class DocsControllerTest extends WebTestCase
+final class DocumentsControllerTest extends WebTestCase
 {
     public function testDocumentAndLocaleLifecycle(): void
     {
@@ -25,6 +25,9 @@ final class DocsControllerTest extends WebTestCase
         $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => 'crud-test']);
         self::assertResponseStatusCodeSame(201);
         $doc = $client->getResponse()->headers->get('Location');
+        $createdDocument = $client->getInternalResponse()->toArray()['data'];
+        self::assertNotEmpty($createdDocument['created_at']);
+        self::assertSame($createdDocument['created_at'], $createdDocument['updated_at']);
 
         try {
             $client->request('GET', '/docs');
@@ -34,7 +37,10 @@ final class DocsControllerTest extends WebTestCase
             $client->jsonRequest('PUT', $doc, ['type_id' => 1, 'translit' => 'crud-test-updated']);
             self::assertResponseIsSuccessful();
             $client->request('GET', $doc);
-            self::assertSame('crud-test-updated', $client->getInternalResponse()->toArray()['data']['translit']);
+            $updatedDocument = $client->getInternalResponse()->toArray()['data'];
+            self::assertSame('crud-test-updated', $updatedDocument['translit']);
+            self::assertSame($createdDocument['created_at'], $updatedDocument['created_at']);
+            self::assertGreaterThan($createdDocument['updated_at'], $updatedDocument['updated_at']);
 
             $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'invalid', 'doc_content' => '']);
             self::assertResponseStatusCodeSame(422);
@@ -57,7 +63,9 @@ final class DocsControllerTest extends WebTestCase
             self::assertResponseStatusCodeSame(201);
             $client->request('GET', $doc);
             self::assertSame(['uk', 'en'], array_column($client->getInternalResponse()->toArray()['data']['locales'], 'lang_id'));
-            $timestamps = array_column($client->getInternalResponse()->toArray()['data']['locales'], 'updated_at', 'lang_id');
+            $before = array_column($client->getInternalResponse()->toArray()['data']['locales'], null, 'lang_id');
+            self::assertNotEmpty($before['en']['created_at']);
+            self::assertSame($before['en']['created_at'], $before['en']['updated_at']);
             $client->jsonRequest('PUT', $doc, [
                 'type_id' => 1,
                 'translit' => 'crud-test-updated',
@@ -65,8 +73,9 @@ final class DocsControllerTest extends WebTestCase
             ]);
             self::assertResponseIsSuccessful();
             $updated = array_column($client->getInternalResponse()->toArray()['data']['locales'], null, 'lang_id');
-            self::assertSame($timestamps['uk'], $updated['uk']['updated_at']);
-            self::assertGreaterThan($timestamps['en'], $updated['en']['updated_at']);
+            self::assertSame($before['uk']['updated_at'], $updated['uk']['updated_at']);
+            self::assertGreaterThan($before['en']['updated_at'], $updated['en']['updated_at']);
+            self::assertSame($before['en']['created_at'], $updated['en']['created_at']);
             self::assertSame('Deutsch', $updated['de']['doc_content']);
             $client->request('DELETE', $doc.'/locales/de');
             self::assertResponseStatusCodeSame(204);

@@ -1,0 +1,63 @@
+docs_list:
+    path: /docs
+    controller: NuraBiz\SiteContent\Controller\DocsController::list
+    methods: GET
+    defaults:
+        _format: json
+
+docs_types:
+    path: /docs/types
+    controller: NuraBiz\SiteContent\Controller\DocsController::types
+    methods: GET
+    defaults:
+        _format: json
+
+docs_locales:
+    path: /docs/locales
+    controller: NuraBiz\SiteContent\Controller\DocsController::locales
+    methods: GET
+    defaults:
+        _format: json
+
+docs_get_by_translit:
+    path: /docs/translit/{translit}/{langId}
+    controller: NuraBiz\SiteContent\Controller\DocsController::getByTranslit
+    methods: GET
+    defaults:
+        _format: json
+    requirements:
+        langId: '[A-Za-z]{2}'
+
+docs_create:
+    path: /docs
+    controller: NuraBiz\SiteContent\Controller\DocsController::create
+    methods: POST
+    defaults:
+        _format: json
+
+docs_get:
+    path: /docs/{id}
+    controller: NuraBiz\SiteContent\Controller\DocsController::get
+    methods: GET
+    defaults:
+        _format: json
+    requirements:
+        id: '[0-9]+'
+
+docs_update:
+    path: /docs/{id}
+    controller: NuraBiz\SiteContent\Controller\DocsController::update
+    methods: PUT
+    defaults:
+        _format: json
+    requirements:
+        id: '[0-9]+'
+
+docs_delete:
+    path: /docs/{id}
+    controller: NuraBiz\SiteContent\Controller\DocsController::delete
+    methods: DELETE
+    defaults:
+        _format: json
+    requirements:
+        id: '[0-9]+'

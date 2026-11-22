@@ -15,9 +15,53 @@ final class GraphQlControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            ['data' => ['documentTypes' => ['rules', 'services']]],
+            ['data' => ['documentTypes' => ['RULES', 'SERVICES']]],
             $client->getInternalResponse()->toArray(),
         );
+    }
+
+    public function testDocumentSchemaTypes(): void
+    {
+        $client = self::createClient();
+        $client->jsonRequest('POST', '/graphql', ['query' => <<<'GRAPHQL'
+            {
+                document: __type(name: "Document") {
+                    fields { name type { kind name ofType { name kind } } }
+                }
+                query: __type(name: "Query") {
+                    fields { name type { ofType { ofType { ofType { name kind } } } } }
+                }
+            }
+            GRAPHQL]);
+
+        self::assertResponseIsSuccessful();
+        $schema = $client->getInternalResponse()->toArray()['data'];
+        $fields = array_column($schema['document']['fields'], 'type', 'name');
+
+        foreach (['id' => 'Int', 'type_id' => 'Int', 'translit' => 'String', 'created_at' => 'DateTime', 'updated_at' => 'DateTime'] as $field => $type) {
+            self::assertSame(
+                ['kind' => 'NON_NULL', 'name' => null, 'ofType' => ['name' => $type, 'kind' => 'SCALAR']],
+                $fields[$field],
+            );
+        }
+        self::assertSame(['kind' => 'ENUM', 'name' => 'DocumentType', 'ofType' => null], $fields['type']);
+
+        $queries = array_column($schema['query']['fields'], 'type', 'name');
+        self::assertSame(['name' => 'LocaleCode', 'kind' => 'SCALAR'], $queries['documentLocales']['ofType']['ofType']['ofType']);
+    }
+
+    public function testDocumentContentRejectsInvalidLocale(): void
+    {
+        $client = self::createClient();
+        $client->jsonRequest('POST', '/graphql', [
+            'query' => 'query ($locale: LocaleCode!) { documentContent(document_id: 1, locale: $locale) { id } }',
+            'variables' => ['locale' => 'invalid'],
+        ]);
+
+        self::assertResponseIsSuccessful();
+        $response = $client->getInternalResponse()->toArray();
+        self::assertArrayNotHasKey('data', $response);
+        self::assertStringContainsString('Expected a two-letter document locale code.', $response['errors'][0]['message']);
     }
 
     public function testDocumentListsMatchRest(): void
@@ -32,6 +76,18 @@ final class GraphQlControllerTest extends WebTestCase
             $client->request('GET', $path);
             self::assertResponseIsSuccessful();
             $expected[$field] = $client->getInternalResponse()->toArray()['data'];
+            if ('documents' === $field) {
+                foreach ($expected[$field] as &$document) {
+                    foreach (['created_at', 'updated_at'] as $timestamp) {
+                        $document[$timestamp] = (new \DateTimeImmutable($document[$timestamp], new \DateTimeZone('UTC')))
+                            ->format('Y-m-d\TH:i:s');
+                    }
+                }
+                unset($document);
+            }
+            if ('documentTypes' === $field) {
+                $expected[$field] = array_map(strtoupper(...), $expected[$field]);
+            }
         }
 
         $client->jsonRequest('POST', '/graphql', ['query' => <<<'GRAPHQL'

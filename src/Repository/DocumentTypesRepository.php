@@ -24,6 +24,11 @@ final readonly class DocumentTypesRepository
         return self::LIST;
     }
 
+    public function findName(int $id): ?string
+    {
+        return self::TYPES_BY_ID[$id] ?? null;
+    }
+
     public function containsId(int $id): bool
     {
         return isset(self::TYPES_BY_ID[$id]);

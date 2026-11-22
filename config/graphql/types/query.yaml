@@ -6,11 +6,22 @@ Query:
                 type: '[Document!]!'
                 resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documents()'
             documentTypes:
-                type: '[String!]!'
+                type: '[DocumentType!]!'
                 resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentTypes()'
             documentLocales:
-                type: '[String!]!'
+                type: '[LocaleCode!]!'
                 resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentLocales()'
+            documentContents:
+                type: '[DocumentContent!]'
+                args:
+                    document_id: { type: 'Int!' }
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentContents(args["document_id"])'
+            documentContent:
+                type: DocumentContent
+                args:
+                    document_id: { type: 'Int!' }
+                    locale: { type: 'LocaleCode!' }
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentContent(args["document_id"], args["locale"])'
 
 Document:
     type: object
@@ -18,6 +29,37 @@ Document:
         fields:
             id: { type: 'Int!' }
             type_id: { type: 'Int!' }
+            type: { type: DocumentType }
             translit: { type: 'String!' }
-            created_at: { type: 'String!' }
-            updated_at: { type: 'String!' }
+            created_at: { type: 'DateTime!' }
+            updated_at: { type: 'DateTime!' }
+
+DocumentType:
+    type: enum
+    config:
+        enumClass: NuraBiz\SiteContent\GraphQl\DocumentType
+
+DateTime:
+    type: custom-scalar
+    config:
+        description: 'ISO 8601 local date and time to second precision, without a time zone.'
+        serialize: NuraBiz\SiteContent\GraphQl\DateTimeScalar::serialize
+
+LocaleCode:
+    type: custom-scalar
+    config:
+        description: 'Two-letter document locale code.'
+        serialize: NuraBiz\SiteContent\GraphQl\LocaleCodeScalar::serialize
+        parseValue: NuraBiz\SiteContent\GraphQl\LocaleCodeScalar::parseValue
+        parseLiteral: NuraBiz\SiteContent\GraphQl\LocaleCodeScalar::parseLiteral
+
+DocumentContent:
+    type: object
+    config:
+        fields:
+            id: { type: 'Int!' }
+            doc_id: { type: 'Int!' }
+            lang_id: { type: 'LocaleCode!' }
+            doc_content: { type: 'String!' }
+            created_at: { type: 'DateTime!' }
+            updated_at: { type: 'DateTime!' }

@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class DocumentsControllerTest extends WebTestCase
 {
-    public function testTranslitIsUniqueWithinLocale(): void
+    public function testDocumentsWithCatalogLocalesCannotShareTranslit(): void
     {
         if (!str_ends_with((string) parse_url($_SERVER['DATABASE_URL'] ?? '', PHP_URL_PATH), '_test')) {
             self::markTestSkipped('Set DATABASE_URL to a prepared database with a name ending in _test.');
@@ -19,8 +19,8 @@ final class DocumentsControllerTest extends WebTestCase
         $documents = [];
 
         try {
-            foreach (['en', 'uk'] as $locale) {
-                $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $translit, 'locales' => [$locale => $locale]]);
+            foreach ([$translit, $translit.'-second'] as $slug) {
+                $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $slug, 'locales' => ['en' => 'en']]);
                 self::assertResponseStatusCodeSame(201);
                 $documents[] = $client->getResponse()->headers->get('Location');
             }
@@ -31,16 +31,16 @@ final class DocumentsControllerTest extends WebTestCase
             $client->jsonRequest('PUT', $documents[1], ['type_id' => 1, 'translit' => $translit, 'locales' => ['en' => 'Duplicate']]);
             self::assertResponseStatusCodeSame(409);
 
-            $client->request('GET', '/docs/translit/'.$translit.'/en');
+            $client->request('GET', '/docs/'.$translit.'/en');
             self::assertResponseIsSuccessful();
             self::assertSame('en', $client->getInternalResponse()->toArray()['data']['locales'][0]['doc_content']);
 
             $renamed = $translit.'-renamed';
             $client->jsonRequest('PUT', $documents[0], ['type_id' => 1, 'translit' => $renamed]);
             self::assertResponseIsSuccessful();
-            $client->request('GET', '/docs/translit/'.$renamed.'/en');
+            $client->request('GET', '/docs/'.$renamed.'/en');
             self::assertResponseIsSuccessful();
-            $client->request('GET', '/docs/translit/'.$translit.'/en');
+            $client->request('GET', '/docs/'.$translit.'/en');
             self::assertResponseStatusCodeSame(404);
         } finally {
             foreach ($documents as $document) {
@@ -70,6 +70,7 @@ final class DocumentsControllerTest extends WebTestCase
         $createdDocument = $client->getInternalResponse()->toArray()['data'];
         self::assertNotEmpty($createdDocument['created_at']);
         self::assertSame($createdDocument['created_at'], $createdDocument['updated_at']);
+        self::assertSame(['en' => '', 'ru' => '', 'uk' => ''], array_column($createdDocument['locales'], 'doc_content', 'lang_id'));
 
         try {
             $client->request('GET', '/docs');
@@ -84,75 +85,24 @@ final class DocumentsControllerTest extends WebTestCase
             self::assertSame($createdDocument['created_at'], $updatedDocument['created_at']);
             self::assertGreaterThan($createdDocument['updated_at'], $updatedDocument['updated_at']);
 
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'invalid', 'doc_content' => '']);
+            $documentData = ['type_id' => 1, 'translit' => 'crud-test-updated'];
+            $client->jsonRequest('PUT', $doc, $documentData + ['locales' => ['invalid' => '']]);
             self::assertResponseStatusCodeSame(422);
 
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'en', 'doc_content' => 'Initial']);
-            self::assertResponseStatusCodeSame(201);
-            $locale = $client->getResponse()->headers->get('Location');
-
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'EN', 'doc_content' => 'Duplicate']);
-            self::assertResponseStatusCodeSame(409);
-
-            $client->jsonRequest('PUT', $locale, ['lang_id' => 'uk', 'doc_content' => 'Updated']);
+            $localeContents = ['en' => 'English', 'ru' => 'Русский', 'uk' => 'Українська'];
+            $client->jsonRequest('PUT', $doc, $documentData + ['locales' => $localeContents]);
             self::assertResponseIsSuccessful();
-            $client->request('GET', $locale);
-            self::assertSame('Updated', $client->getInternalResponse()->toArray()['data']['doc_content']);
-            $client->request('GET', $doc.'/locales');
-            self::assertSame(['uk'], array_column($client->getInternalResponse()->toArray()['data'], 'lang_id'));
+            self::assertSame($localeContents, array_column($client->getInternalResponse()->toArray()['data']['locales'], 'doc_content', 'lang_id'));
 
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'en', 'doc_content' => 'English']);
-            self::assertResponseStatusCodeSame(201);
             $client->request('GET', $doc);
-            self::assertSame(['uk', 'en'], array_column($client->getInternalResponse()->toArray()['data']['locales'], 'lang_id'));
-            $before = array_column($client->getInternalResponse()->toArray()['data']['locales'], null, 'lang_id');
-            self::assertNotEmpty($before['en']['created_at']);
-            self::assertSame($before['en']['created_at'], $before['en']['updated_at']);
-            $client->jsonRequest('PUT', $doc, [
-                'type_id' => 1,
-                'translit' => 'crud-test-updated',
-                'locales' => ['uk' => 'Updated', 'en' => 'english', 'de' => 'Deutsch'],
-            ]);
             self::assertResponseIsSuccessful();
-            $updated = array_column($client->getInternalResponse()->toArray()['data']['locales'], null, 'lang_id');
-            self::assertSame($before['uk']['updated_at'], $updated['uk']['updated_at']);
-            self::assertGreaterThan($before['en']['updated_at'], $updated['en']['updated_at']);
-            self::assertSame($before['en']['created_at'], $updated['en']['created_at']);
-            self::assertSame('Deutsch', $updated['de']['doc_content']);
-            $client->request('DELETE', $doc.'/locales/de');
-            self::assertResponseStatusCodeSame(204);
+            $document = $client->getInternalResponse()->toArray()['data'];
+            self::assertSame($localeContents, array_column($document['locales'], 'doc_content', 'lang_id'));
+            self::assertSame(array_column($createdDocument['locales'], 'id'), array_column($document['locales'], 'id'));
 
-            $client->request('GET', '/docs/translit/crud-test-updated/UK');
+            $client->request('GET', '/docs/crud-test-updated/UK');
             self::assertResponseIsSuccessful();
-            self::assertSame(['uk'], array_column($client->getInternalResponse()->toArray()['data']['locales'], 'lang_id'));
-            $client->request('GET', '/docs/translit/crud-test-updated/de');
-            self::assertResponseStatusCodeSame(404);
-            $client->request('GET', '/docs/locales');
-            self::assertSame(['en', 'uk'], $client->getInternalResponse()->toArray()['data']);
-
-            $client->jsonRequest('PUT', $doc.'/locales/en', ['doc_content' => 'Updated English']);
-            self::assertResponseIsSuccessful();
-            self::assertSame('Updated English', $client->getInternalResponse()->toArray()['data']['doc_content']);
-            $client->request('DELETE', $doc.'/locales/en');
-            self::assertResponseStatusCodeSame(204);
-            $client->request('GET', '/docs/translit/crud-test-updated/en');
-            self::assertResponseStatusCodeSame(404);
-
-            $client->request('DELETE', $locale);
-            self::assertResponseStatusCodeSame(204);
-            $client->request('GET', $locale);
-            self::assertResponseStatusCodeSame(404);
-
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'en', 'doc_content' => 'Remove all']);
-            self::assertResponseStatusCodeSame(201);
-            $client->request('DELETE', $doc.'/locales');
-            self::assertResponseStatusCodeSame(204);
-            $client->request('GET', $doc);
-            self::assertSame([], $client->getInternalResponse()->toArray()['data']['locales']);
-
-            $client->jsonRequest('POST', $doc.'/locales', ['lang_id' => 'uk', 'doc_content' => 'Cascade']);
-            self::assertResponseStatusCodeSame(201);
-            $localeId = $client->getInternalResponse()->toArray()['data']['id'];
+            self::assertSame(['uk' => 'Українська'], array_column($client->getInternalResponse()->toArray()['data']['locales'], 'doc_content', 'lang_id'));
         } finally {
             $client->request('DELETE', $doc);
             self::assertResponseStatusCodeSame(204);
@@ -161,8 +111,8 @@ final class DocumentsControllerTest extends WebTestCase
         $client->request('GET', $doc);
         self::assertResponseStatusCodeSame(404);
         self::assertFalse(self::getContainer()->get('doctrine.dbal.default_connection')->fetchOne(
-            'SELECT id FROM documents_content WHERE id = ?',
-            [$localeId],
+            'SELECT id FROM documents_content WHERE doc_id = ?',
+            [$createdDocument['id']],
         ));
     }
 }

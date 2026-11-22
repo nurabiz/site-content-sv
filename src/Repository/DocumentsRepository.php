@@ -159,11 +159,6 @@ final readonly class DocumentsRepository
     }
 
     /** @return list<string> */
-    public function listLanguages(): array
-    {
-        return $this->connection->fetchFirstColumn(\sprintf('SELECT DISTINCT %s FROM %s ORDER BY %s', self::FIELD_LOCALE, self::CONTENT_TABLE_NAME, self::FIELD_LOCALE));
-    }
-
     public function getDocumentLocale(Document $document, string $langId): ?DocumentContent
     {
         $docId = $document->getId();
@@ -185,7 +180,7 @@ final readonly class DocumentsRepository
         return false === $row ? null : $this->documentContentFactory->fromRow($document, $row);
     }
 
-    public function saveDocumentLocale(Document $document, string $locale, string $content): ?DocumentContent
+    private function saveDocumentLocale(Document $document, string $locale, string $content): ?DocumentContent
     {
         return $this->connection->transactional(function () use ($document, $locale, $content): ?DocumentContent {
             $this->connection->executeStatement(
@@ -211,25 +206,6 @@ final readonly class DocumentsRepository
         });
     }
 
-    public function documentDeleteLocale(int $docId, string $langId): bool
-    {
-        return 0 < $this->connection->executeStatement(
-            \sprintf('DELETE FROM %s WHERE %s = :doc_id AND %s = :lang_id', self::CONTENT_TABLE_NAME, self::FIELD_DOC_ID, self::FIELD_LOCALE),
-            ['doc_id' => $docId, 'lang_id' => $langId],
-        );
-    }
-
-    public function deleteDocumentLocales(int $docId): void
-    {
-        $this->connection->executeStatement(
-            \sprintf('DELETE FROM %s WHERE %s = :doc_id', self::CONTENT_TABLE_NAME, self::FIELD_DOC_ID),
-            [
-                'doc_id' => $docId,
-            ],
-        );
-    }
-
-    /** @return list<DocumentContent> */
     public function listForDoc(Document $doc): array
     {
         $rows = $this->connection->fetchAllAssociative(
@@ -246,7 +222,7 @@ final readonly class DocumentsRepository
         return array_map(fn (array $row): DocumentContent => $this->documentContentFactory->fromRow($doc, $row), $rows);
     }
 
-    public function findForDoc(Document $doc, int $id): ?DocumentContent
+    private function findForDoc(Document $doc, int $id): ?DocumentContent
     {
         $row = $this->connection->fetchAssociative(
             \sprintf(
@@ -262,7 +238,7 @@ final readonly class DocumentsRepository
         return false === $row ? null : $this->documentContentFactory->fromRow($doc, $row);
     }
 
-    public function createLocale(Document $doc, string $langId, string $content): ?DocumentContent
+    private function createLocale(Document $doc, string $langId, string $content): ?DocumentContent
     {
         $inserted = $this->connection->executeStatement(
             'INSERT INTO documents_content (doc_id, translit, locale, doc_content, updated_at)
@@ -277,62 +253,5 @@ final readonly class DocumentsRepository
 
         return $this->findForDoc($doc, (int) $this->connection->lastInsertId())
             ?? throw new \LogicException('The inserted document locale could not be read.');
-    }
-
-    public function saveLocale(Document $doc, int $id, string $langId, string $content): ?DocumentContent
-    {
-        return $this->connection->transactional(function () use ($doc, $id, $langId, $content): ?DocumentContent {
-            $this->connection->executeStatement(
-                \sprintf(
-                    'UPDATE %s SET %s = :lang_id, %s = :doc_content, %s = CURRENT_TIMESTAMP(6)
-                 WHERE %s = :doc_id AND %s = :id
-                   AND (BINARY %s <> BINARY :previous_lang_id OR BINARY %s <> BINARY :previous_content)',
-                    self::CONTENT_TABLE_NAME,
-                    self::FIELD_LOCALE,
-                    self::FIELD_DOC_CONTENT,
-                    self::FIELD_UPDATED_AT,
-                    self::FIELD_DOC_ID,
-                    self::FIELD_ID,
-                    self::FIELD_LOCALE,
-                    self::FIELD_DOC_CONTENT,
-                ),
-                [
-                    'lang_id' => $langId,
-                    'doc_content' => $content,
-                    'doc_id' => $doc->getId(),
-                    'id' => $id,
-                    'previous_lang_id' => $langId,
-                    'previous_content' => $content,
-                ],
-            );
-
-            return $this->findForDoc($doc, $id);
-        });
-    }
-
-    public function deleteLocaleById(Document $doc, int $id): ?DocumentContent
-    {
-        return $this->connection->transactional(function () use ($doc, $id): ?DocumentContent {
-            $row = $this->connection->fetchAssociative(
-                \sprintf(
-                    'SELECT %s FROM %s WHERE %s = :doc_id AND %s = :id FOR UPDATE',
-                    self::CONTENT_COLUMNS,
-                    self::CONTENT_TABLE_NAME,
-                    self::FIELD_DOC_ID,
-                    self::FIELD_ID,
-                ),
-                ['doc_id' => $doc->getId(), 'id' => $id],
-            );
-            if (false === $row) {
-                return null;
-            }
-
-            $this->connection->executeStatement(
-                \sprintf('DELETE FROM %s WHERE %s = :doc_id AND %s = :id', self::CONTENT_TABLE_NAME, self::FIELD_DOC_ID, self::FIELD_ID),
-                ['doc_id' => $doc->getId(), 'id' => $id],
-            );
-
-            return $this->documentContentFactory->fromRow($doc, $row);
-        });
     }
 }

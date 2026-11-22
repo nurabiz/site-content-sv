@@ -4,7 +4,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "query": "query DocumentLists { documents { id type_id translit created_at updated_at } documentTypes documentLocales }"
+  "query": "query DocumentLists { documents { __typename id type_id type translit created_at updated_at } documentTypes documentLocales }"
 }
 
 ### Список документов
@@ -13,10 +13,10 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "query": "query Documents { documents { id type_id translit created_at updated_at } }"
+  "query": "query Documents { documents { __typename id type_id type translit created_at updated_at } }"
 }
 
-### Типы документов
+### Список типов документов
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Accept: application/json
@@ -25,11 +25,31 @@ Accept: application/json
   "query": "query DocumentTypes { documentTypes }"
 }
 
-### Локали документов
+### Список локалей документов
 POST {{baseUrl}}/graphql
 Content-Type: application/json
 Accept: application/json
 
 {
   "query": "query DocumentLocales { documentLocales }"
+}
+
+### Все контенты документа
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query DocumentContents($id: Int!) { documentContents(document_id: $id) { id doc_id lang_id doc_content created_at updated_at } }",
+  "variables": { "id": 1 }
+}
+
+### Контент документа по локали
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query DocumentContent($id: Int!, $locale: LocaleCode!) { documentContent(document_id: $id, locale: $locale) { id doc_id lang_id doc_content created_at updated_at } }",
+  "variables": { "id": 1, "locale": "ru" }
 }

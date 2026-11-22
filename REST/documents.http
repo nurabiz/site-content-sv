@@ -1,7 +1,6 @@
 @json = application/json
 @siteContentDocId = 1
 @siteContentDocTranslit = terms_of_use
-@siteContentLocaleId = ru
 
 # Измените baseUrl при необходимости. Запускайте запросы сверху вниз.
 # Запросы записи и удаления используют ID документа, созданного в этом файле.
@@ -14,11 +13,11 @@ Accept: {{json}}
 GET {{baseUrl}}/docs/types
 Accept: {{json}}
 
-### Языки, используемые в документах
+### Справочник локалей
 GET {{baseUrl}}/docs/locales
 Accept: {{json}}
 
-### Создать документ с двумя локалями
+### Создать документ со всеми локалями справочника
 POST {{baseUrl}}/docs
 Accept: {{json}}
 Content-Type: {{json}}
@@ -28,7 +27,7 @@ Content-Type: {{json}}
   "translit": "rest-example-{{$uuid}}",
   "locales": {
     "en": "Example document",
-    "de": "Beispieldokument"
+    "uk": "Приклад документа"
   }
 }
 
@@ -44,10 +43,10 @@ GET {{baseUrl}}/docs/{{siteContentDocId}}
 Accept: {{json}}
 
 ### Найти документ по translit и языку
-GET {{baseUrl}}/docs/translit/{{siteContentDocTranslit}}/en
+GET {{baseUrl}}/docs/{{siteContentDocTranslit}}/en
 Accept: {{json}}
 
-### Обновить документ и английский текст
+### Сохранить документ и тексты локалей
 PUT {{baseUrl}}/docs/{{siteContentDocId}}
 Accept: {{json}}
 Content-Type: {{json}}
@@ -56,61 +55,11 @@ Content-Type: {{json}}
   "type_id": 1,
   "translit": "{{siteContentDocTranslit}}",
   "locales": {
-    "en": "Updated example document"
+    "en": "Updated example document",
+    "ru": "яяяяя",
+    "uk": "Оновлений приклад документа"
   }
 }
-
-### Добавить украинскую локаль
-POST {{baseUrl}}/docs/{{siteContentDocId}}/locales
-Accept: {{json}}
-Content-Type: {{json}}
-
-{
-  "lang_id": "uk",
-  "doc_content": "Приклад документа"
-}
-
-> {%
-    if (response.status === 201) {
-        client.global.set("siteContentLocaleId", response.body.data.id);
-    }
-%}
-
-### Список локалей документа
-GET {{baseUrl}}/docs/{{siteContentDocId}}/locales
-Accept: {{json}}
-
-### Получить локаль по ID записи
-GET {{baseUrl}}/docs/{{siteContentDocId}}/locales/{{siteContentLocaleId}}
-Accept: {{json}}
-
-### Обновить локаль по ID записи
-PUT {{baseUrl}}/docs/{{siteContentDocId}}/locales/{{siteContentLocaleId}}
-Accept: {{json}}
-Content-Type: {{json}}
-
-{
-  "lang_id": "uk",
-  "doc_content": "Оновлений приклад документа"
-}
-
-### Обновить локаль по коду языка
-PUT {{baseUrl}}/docs/{{siteContentDocId}}/locales/en
-Accept: {{json}}
-Content-Type: {{json}}
-
-{
-  "doc_content": "Revised English content"
-}
-
-### Удалить локаль по ID записи
-DELETE {{baseUrl}}/docs/{{siteContentDocId}}/locales/{{siteContentLocaleId}}
-
-### Удалить локаль по коду языка
-DELETE {{baseUrl}}/docs/{{siteContentDocId}}/locales/en
-
-### Удалить все оставшиеся локали документа
-DELETE {{baseUrl}}/docs/{{siteContentDocId}}/locales
 
 ### Удалить документ
 DELETE {{baseUrl}}/docs/{{siteContentDocId}}
@@ -119,6 +68,5 @@ DELETE {{baseUrl}}/docs/{{siteContentDocId}}
     if (response.status === 204) {
         client.global.clear("siteContentDocId");
         client.global.clear("siteContentDocTranslit");
-        client.global.clear("siteContentLocaleId");
     }
 %}

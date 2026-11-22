@@ -19,23 +19,23 @@ docs_locales:
     defaults:
         _format: json
 
-docs_get_by_translit:
-    path: /docs/translit/{translit}/{langId}
+doc_get_by_translit:
+    path: /docs/{translit}/{locale}
     controller: NuraBiz\SiteContent\Controller\DocumentsController::getByTranslit
     methods: GET
     defaults:
         _format: json
     requirements:
-        langId: '[A-Za-z]{2}'
+        locale: '[A-Za-z]{2}'
 
-docs_create:
+doc_create:
     path: /docs
     controller: NuraBiz\SiteContent\Controller\DocumentsController::create
     methods: POST
     defaults:
         _format: json
 
-docs_get:
+doc_get:
     path: /docs/{id}
     controller: NuraBiz\SiteContent\Controller\DocumentsController::get
     methods: GET
@@ -44,7 +44,7 @@ docs_get:
     requirements:
         id: '[0-9]+'
 
-docs_update:
+doc_update:
     path: /docs/{id}
     controller: NuraBiz\SiteContent\Controller\DocumentsController::update
     methods: PUT
@@ -53,7 +53,7 @@ docs_update:
     requirements:
         id: '[0-9]+'
 
-docs_delete:
+doc_delete:
     path: /docs/{id}
     controller: NuraBiz\SiteContent\Controller\DocumentsController::delete
     methods: DELETE

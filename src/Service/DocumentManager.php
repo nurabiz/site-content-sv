@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace NuraBiz\SiteContent\Service;
 
-use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use NuraBiz\SiteContent\Dto\DocContentDto;
 use NuraBiz\SiteContent\Dto\DocDto;
 use NuraBiz\SiteContent\Entity\Document;
 use NuraBiz\SiteContent\Entity\DocumentContent;
+use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentsRepository;
 use NuraBiz\SiteContent\Repository\DocumentTypesRepository;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -21,6 +20,7 @@ final readonly class DocumentManager
     public function __construct(
         private DocumentsRepository     $docs,
         private DocumentTypesRepository $types,
+        private DocumentLocalesRepository $locales,
     ) {
     }
 
@@ -55,25 +55,6 @@ final readonly class DocumentManager
         return $localized->toArray();
     }
 
-    public function updateContent(int $docId, string $langId, string $content): DocumentContent
-    {
-        return $this->docs->saveDocumentLocale($this->get($docId), strtolower($langId), $content)
-            ?? throw new NotFoundHttpException('Document locale not found.');
-    }
-
-    public function deleteContent(int $docId, string $langId): void
-    {
-        if (!$this->docs->documentDeleteLocale($docId, strtolower($langId))) {
-            throw new NotFoundHttpException('Document locale not found.');
-        }
-    }
-
-    public function deleteAllContent(int $docId): void
-    {
-        $this->get($docId);
-        $this->docs->deleteDocumentLocales($docId);
-    }
-
     public function save(DocDto $dto, ?int $id = null): Document
     {
         if (!$this->types->containsId($dto->type_id)) {
@@ -86,12 +67,21 @@ final readonly class DocumentManager
                 throw new UnprocessableEntityHttpException('Locales must use distinct two-letter language codes.');
             }
 
-            $locales[strtolower($langId)] = $content;
+            $locale = strtolower($langId);
+            if (null === $id && !$this->locales->contains($locale)) {
+                throw new UnprocessableEntityHttpException(sprintf('Unknown document locale "%s".', $locale));
+            }
+
+            $locales[$locale] = $content;
         }
 
         try {
             if (null === $id) {
-                return $this->docs->documentCreate($dto->type_id, $dto->translit, $locales);
+                return $this->docs->documentCreate(
+                    $dto->type_id,
+                    $dto->translit,
+                    array_replace(array_fill_keys($this->locales->list(), ''), $locales),
+                );
             }
 
             return $this->docs->documentUpdate($id, $dto->type_id, $dto->translit, $locales)
@@ -119,37 +109,5 @@ final readonly class DocumentManager
             static fn (DocumentContent $content): array => $content->toArray(),
             $this->docs->listForDoc($doc),
         );
-    }
-
-    public function getLocale(int $docId, int $id): DocumentContent
-    {
-        return $this->docs->findForDoc($this->get($docId), $id)
-            ?? throw new NotFoundHttpException('Document locale not found.');
-    }
-
-    public function saveLocale(int $docId, DocContentDto $dto, ?int $id = null): DocumentContent
-    {
-        $doc = $this->get($docId);
-        $langId = strtolower($dto->lang_id);
-        try {
-            if (null === $id) {
-                return $this->docs->createLocale($doc, $langId, $dto->doc_content)
-                    ?? throw new NotFoundHttpException('Document not found.');
-            }
-
-            return $this->docs->saveLocale($doc, $id, $langId, $dto->doc_content)
-                ?? throw new NotFoundHttpException('Document locale not found.');
-        } catch (UniqueConstraintViolationException $exception) {
-            throw new ConflictHttpException('This translit and locale pair already exists.', $exception);
-        } catch (ForeignKeyConstraintViolationException $exception) {
-            throw new NotFoundHttpException('Document not found.', $exception);
-        }
-    }
-
-    public function deleteLocale(int $docId, int $id): void
-    {
-        if (null === $this->docs->deleteLocaleById($this->get($docId), $id)) {
-            throw new NotFoundHttpException('Document locale not found.');
-        }
     }
 }

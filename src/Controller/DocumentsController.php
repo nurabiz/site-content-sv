@@ -6,7 +6,7 @@ namespace NuraBiz\SiteContent\Controller;
 
 use NuraBiz\SiteContent\Dto\DocDto;
 use NuraBiz\SiteContent\Service\DocumentManager;
-use NuraBiz\SiteContent\Repository\DocumentsRepository;
+use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentTypesRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -29,14 +29,14 @@ final class DocumentsController extends AbstractController
         return $this->json(['data' => $types->list()]);
     }
 
-    public function locales(DocumentsRepository $contents): JsonResponse
+    public function locales(DocumentLocalesRepository $locales): JsonResponse
     {
-        return $this->json(['data' => $contents->listLanguages()]);
+        return $this->json(['data' => $locales->list()]);
     }
 
-    public function getByTranslit(string $translit, string $langId): JsonResponse
+    public function getByTranslit(string $translit, string $locale): JsonResponse
     {
-        return $this->json(['data' => $this->docs->getByTranslitAndLocale($translit, $langId)]);
+        return $this->json(['data' => $this->docs->getByTranslitAndLocale($translit, $locale)]);
     }
 
     public function create(#[MapRequestPayload(acceptFormat: 'json')] DocDto $dto): JsonResponse
@@ -44,7 +44,7 @@ final class DocumentsController extends AbstractController
         $doc = $this->docs->save($dto);
 
         return $this->json(['data' => $doc->toArray()], Response::HTTP_CREATED, [
-            'Location' => $this->generateUrl('docs_get', ['id' => $doc->getId()]),
+            'Location' => $this->generateUrl('doc_get', ['id' => $doc->getId()]),
         ]);
     }
 

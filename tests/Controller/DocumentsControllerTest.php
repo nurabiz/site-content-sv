@@ -8,6 +8,48 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class DocumentsControllerTest extends WebTestCase
 {
+    public function testTranslitIsUniqueWithinLocale(): void
+    {
+        if (!str_ends_with((string) parse_url($_SERVER['DATABASE_URL'] ?? '', PHP_URL_PATH), '_test')) {
+            self::markTestSkipped('Set DATABASE_URL to a prepared database with a name ending in _test.');
+        }
+
+        $client = self::createClient();
+        $translit = 'unique-locale-'.bin2hex(random_bytes(6));
+        $documents = [];
+
+        try {
+            foreach (['en', 'uk'] as $locale) {
+                $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $translit, 'locales' => [$locale => $locale]]);
+                self::assertResponseStatusCodeSame(201);
+                $documents[] = $client->getResponse()->headers->get('Location');
+            }
+
+            $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $translit, 'locales' => ['en' => 'Duplicate']]);
+            self::assertResponseStatusCodeSame(409);
+
+            $client->jsonRequest('PUT', $documents[1], ['type_id' => 1, 'translit' => $translit, 'locales' => ['en' => 'Duplicate']]);
+            self::assertResponseStatusCodeSame(409);
+
+            $client->request('GET', '/docs/translit/'.$translit.'/en');
+            self::assertResponseIsSuccessful();
+            self::assertSame('en', $client->getInternalResponse()->toArray()['data']['locales'][0]['doc_content']);
+
+            $renamed = $translit.'-renamed';
+            $client->jsonRequest('PUT', $documents[0], ['type_id' => 1, 'translit' => $renamed]);
+            self::assertResponseIsSuccessful();
+            $client->request('GET', '/docs/translit/'.$renamed.'/en');
+            self::assertResponseIsSuccessful();
+            $client->request('GET', '/docs/translit/'.$translit.'/en');
+            self::assertResponseStatusCodeSame(404);
+        } finally {
+            foreach ($documents as $document) {
+                $client->request('DELETE', $document);
+                self::assertResponseStatusCodeSame(204);
+            }
+        }
+    }
+
     public function testDocumentAndLocaleLifecycle(): void
     {
         if (!str_ends_with((string) parse_url($_SERVER['DATABASE_URL'] ?? '', PHP_URL_PATH), '_test')) {

@@ -53,23 +53,10 @@ final readonly class DocumentsRepository
     public function findByTranslitAndLocale(string $translit, string $langId): array
     {
         return array_map($this->docsFactory->fromRow(...), $this->connection->fetchAllAssociative(
-            \sprintf(
-                'SELECT d.%s, d.%s, d.%s, d.%s, d.%s FROM %s d
-             WHERE d.%s = :translit AND EXISTS (
-                 SELECT 1 FROM %s c WHERE c.%s = d.%s AND c.%s = :lang_id
-             ) LIMIT 2',
-                self::FIELD_ID,
-                self::FIELD_TYPE_ID,
-                self::FIELD_TRANSLIT,
-                self::FIELD_CREATED_AT,
-                self::FIELD_UPDATED_AT,
-                self::TABLE_NAME,
-                self::FIELD_TRANSLIT,
-                self::CONTENT_TABLE_NAME,
-                self::FIELD_DOC_ID,
-                self::FIELD_ID,
-                self::FIELD_LOCALE,
-            ),
+            'SELECT d.id, d.type_id, d.translit, d.created_at, d.updated_at
+             FROM documents_content c
+             JOIN documents d ON d.id = c.doc_id
+             WHERE c.translit = :translit AND c.locale = :lang_id',
             ['translit' => $translit, 'lang_id' => $langId],
         ));
     }
@@ -86,7 +73,7 @@ final readonly class DocumentsRepository
 
             $id = (int) $this->connection->lastInsertId();
             $doc = $this->find($id) ?? throw new \LogicException('The inserted document could not be read.');
-            $this->writeLocales($id, $locales);
+            $this->writeLocales($doc, $locales);
 
             return $doc->withLocales($this->listForDoc($doc));
         });
@@ -116,41 +103,27 @@ final readonly class DocumentsRepository
                 ['type_id' => $typeId, 'translit' => $translit, 'id' => $id],
             );
 
-            $this->writeLocales($id, $locales);
+            $doc = $this->find($id) ?? throw new \LogicException('The updated document could not be read.');
+            $this->writeLocales($doc, $locales);
 
-            return $this->documentGet($id);
+            return $doc->withLocales($this->listForDoc($doc));
         });
     }
 
     /** @param array<string, string> $locales */
-    private function writeLocales(int $id, array $locales): void
+    private function writeLocales(Document $doc, array $locales): void
     {
         foreach ($locales as $langId => $content) {
-            $this->connection->executeStatement(
-                \sprintf(
-                    'INSERT INTO %s (%s, %s, %s, %s)
-                 VALUES (:doc_id, :lang_id, :doc_content, CURRENT_TIMESTAMP(6))
-                 ON DUPLICATE KEY UPDATE
-                     %s = IF(BINARY %s <> BINARY :compared_content, CURRENT_TIMESTAMP(6), %s),
-                     %s = :updated_content',
-                    self::CONTENT_TABLE_NAME,
-                    self::FIELD_DOC_ID,
-                    self::FIELD_LOCALE,
-                    self::FIELD_DOC_CONTENT,
-                    self::FIELD_UPDATED_AT,
-                    self::FIELD_UPDATED_AT,
-                    self::FIELD_DOC_CONTENT,
-                    self::FIELD_UPDATED_AT,
-                    self::FIELD_DOC_CONTENT,
-                ),
-                [
-                    'doc_id' => $id,
-                    'lang_id' => $langId,
-                    'doc_content' => $content,
-                    'compared_content' => $content,
-                    'updated_content' => $content,
-                ],
+            $id = $this->connection->fetchOne(
+                'SELECT id FROM documents_content WHERE doc_id = :doc_id AND locale = :locale FOR UPDATE',
+                ['doc_id' => $doc->getId(), 'locale' => $langId],
             );
+
+            if (false === $id) {
+                $this->createLocale($doc, $langId, $content);
+            } else {
+                $this->saveDocumentLocale($doc, $langId, $content);
+            }
         }
     }
 
@@ -289,20 +262,18 @@ final readonly class DocumentsRepository
         return false === $row ? null : $this->documentContentFactory->fromRow($doc, $row);
     }
 
-    public function createLocale(Document $doc, string $langId, string $content): DocumentContent
+    public function createLocale(Document $doc, string $langId, string $content): ?DocumentContent
     {
-        $row = ['lang_id' => $langId, 'doc_content' => $content];
-        $this->connection->executeStatement(
-            \sprintf(
-                'INSERT INTO %s (%s, %s, %s, %s) VALUES (:doc_id, :lang_id, :doc_content, CURRENT_TIMESTAMP(6))',
-                self::CONTENT_TABLE_NAME,
-                self::FIELD_DOC_ID,
-                self::FIELD_LOCALE,
-                self::FIELD_DOC_CONTENT,
-                self::FIELD_UPDATED_AT,
-            ),
-            $row + ['doc_id' => $doc->getId()],
+        $inserted = $this->connection->executeStatement(
+            'INSERT INTO documents_content (doc_id, translit, locale, doc_content, updated_at)
+             SELECT id, translit, :lang_id, :doc_content, CURRENT_TIMESTAMP(6)
+             FROM documents WHERE id = :doc_id',
+            ['doc_id' => $doc->getId(), 'lang_id' => $langId, 'doc_content' => $content],
         );
+
+        if (0 === $inserted) {
+            return null;
+        }
 
         return $this->findForDoc($doc, (int) $this->connection->lastInsertId())
             ?? throw new \LogicException('The inserted document locale could not be read.');

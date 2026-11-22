@@ -48,10 +48,6 @@ final readonly class DocumentManager
     {
         $langId = strtolower($langId);
         $matches = $this->docs->findByTranslitAndLocale($translit, $langId);
-        if (\count($matches) > 1) {
-            throw new ConflictHttpException('Multiple documents match this translit and locale.');
-        }
-
         $doc = $matches[0] ?? throw new NotFoundHttpException('Document not found.');
         $localized = $this->docs->documentGetLocale($doc->getId(), $langId)
             ?? throw new NotFoundHttpException('Document locale not found.');
@@ -93,12 +89,16 @@ final readonly class DocumentManager
             $locales[strtolower($langId)] = $content;
         }
 
-        if (null === $id) {
-            return $this->docs->documentCreate($dto->type_id, $dto->translit, $locales);
-        }
+        try {
+            if (null === $id) {
+                return $this->docs->documentCreate($dto->type_id, $dto->translit, $locales);
+            }
 
-        return $this->docs->documentUpdate($id, $dto->type_id, $dto->translit, $locales)
-            ?? throw new NotFoundHttpException('Document not found.');
+            return $this->docs->documentUpdate($id, $dto->type_id, $dto->translit, $locales)
+                ?? throw new NotFoundHttpException('Document not found.');
+        } catch (UniqueConstraintViolationException $exception) {
+            throw new ConflictHttpException('This translit and locale pair already exists.', $exception);
+        }
     }
 
     public function delete(int $id): void
@@ -133,13 +133,14 @@ final readonly class DocumentManager
         $langId = strtolower($dto->lang_id);
         try {
             if (null === $id) {
-                return $this->docs->createLocale($doc, $langId, $dto->doc_content);
+                return $this->docs->createLocale($doc, $langId, $dto->doc_content)
+                    ?? throw new NotFoundHttpException('Document not found.');
             }
 
             return $this->docs->saveLocale($doc, $id, $langId, $dto->doc_content)
                 ?? throw new NotFoundHttpException('Document locale not found.');
         } catch (UniqueConstraintViolationException $exception) {
-            throw new ConflictHttpException('This locale already exists for the document.', $exception);
+            throw new ConflictHttpException('This translit and locale pair already exists.', $exception);
         } catch (ForeignKeyConstraintViolationException $exception) {
             throw new NotFoundHttpException('Document not found.', $exception);
         }

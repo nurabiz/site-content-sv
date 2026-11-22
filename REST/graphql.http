@@ -1,0 +1,35 @@
+### Список документов, типы и локали
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query DocumentLists { documents { id type_id translit created_at updated_at } documentTypes documentLocales }"
+}
+
+### Список документов
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query Documents { documents { id type_id translit created_at updated_at } }"
+}
+
+### Типы документов
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query DocumentTypes { documentTypes }"
+}
+
+### Локали документов
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query DocumentLocales { documentLocales }"
+}

@@ -1,0 +1,23 @@
+Query:
+    type: object
+    config:
+        fields:
+            documents:
+                type: '[Document!]!'
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documents()'
+            documentTypes:
+                type: '[String!]!'
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentTypes()'
+            documentLocales:
+                type: '[String!]!'
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentLocales()'
+
+Document:
+    type: object
+    config:
+        fields:
+            id: { type: 'Int!' }
+            type_id: { type: 'Int!' }
+            translit: { type: 'String!' }
+            created_at: { type: 'String!' }
+            updated_at: { type: 'String!' }

@@ -1,0 +1,4 @@
+graphql:
+    path: /graphql
+    controller: NuraBiz\SiteContent\Controller\GraphQlController::__invoke
+    methods: [GET, POST]

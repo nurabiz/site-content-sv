@@ -7,7 +7,7 @@ namespace DoctrineMigrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-final class Version20261122100000 extends AbstractMigration
+final class Version20261122235948 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -26,7 +26,10 @@ final class Version20261122100000 extends AbstractMigration
                 id INT NOT NULL AUTO_INCREMENT,
                 type_id INT NOT NULL DEFAULT 0,
                 translit VARCHAR(255) NOT NULL,
-                PRIMARY KEY (id)
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_documents_translit (translit)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             SQL);
         $this->addSql(<<<'SQL'
@@ -35,7 +38,8 @@ final class Version20261122100000 extends AbstractMigration
                 doc_id INT NOT NULL,
                 locale VARCHAR(2) NOT NULL,
                 doc_content TEXT NOT NULL,
-                updated_at DATETIME(6) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_document_locale (doc_id, locale),
                 CONSTRAINT fk_documents_content_document

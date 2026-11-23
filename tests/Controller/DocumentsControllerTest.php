@@ -68,7 +68,7 @@ final class DocumentsControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(201);
         $doc = $client->getResponse()->headers->get('Location');
         $createdDocument = $client->getInternalResponse()->toArray()['data'];
-        self::assertNotEmpty($createdDocument['created_at']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $createdDocument['created_at']);
         self::assertSame($createdDocument['created_at'], $createdDocument['updated_at']);
         self::assertSame(['en' => '', 'ru' => '', 'uk' => ''], array_column($createdDocument['locales'], 'doc_content', 'lang_id'));
 
@@ -83,7 +83,7 @@ final class DocumentsControllerTest extends WebTestCase
             $updatedDocument = $client->getInternalResponse()->toArray()['data'];
             self::assertSame('crud-test-updated', $updatedDocument['translit']);
             self::assertSame($createdDocument['created_at'], $updatedDocument['created_at']);
-            self::assertGreaterThan($createdDocument['updated_at'], $updatedDocument['updated_at']);
+            self::assertGreaterThanOrEqual($createdDocument['updated_at'], $updatedDocument['updated_at']);
 
             $documentData = ['type_id' => 1, 'translit' => 'crud-test-updated'];
             $client->jsonRequest('PUT', $doc, $documentData + ['locales' => ['invalid' => '']]);

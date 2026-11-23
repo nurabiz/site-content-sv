@@ -87,7 +87,7 @@ final readonly class DocumentManager
             return $this->docs->documentUpdate($id, $dto->type_id, $dto->translit, $locales)
                 ?? throw new NotFoundHttpException('Document not found.');
         } catch (UniqueConstraintViolationException $exception) {
-            throw new ConflictHttpException('This translit and locale pair already exists.', $exception);
+            throw new ConflictHttpException('This document translit already exists.', $exception);
         }
     }
 

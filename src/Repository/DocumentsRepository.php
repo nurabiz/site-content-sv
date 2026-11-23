@@ -56,7 +56,7 @@ final readonly class DocumentsRepository
             'SELECT d.id, d.type_id, d.translit, d.created_at, d.updated_at
              FROM documents_content c
              JOIN documents d ON d.id = c.doc_id
-             WHERE c.translit = :translit AND c.locale = :lang_id',
+             WHERE d.translit = :translit AND c.locale = :lang_id',
             ['translit' => $translit, 'lang_id' => $langId],
         ));
     }
@@ -93,7 +93,7 @@ final readonly class DocumentsRepository
 
             $this->connection->executeStatement(
                 \sprintf(
-                    'UPDATE %s SET %s = :type_id, %s = :translit, %s = CURRENT_TIMESTAMP(6) WHERE %s = :id',
+                    'UPDATE %s SET %s = :type_id, %s = :translit, %s = CURRENT_TIMESTAMP WHERE %s = :id',
                     self::TABLE_NAME,
                     self::FIELD_TYPE_ID,
                     self::FIELD_TRANSLIT,
@@ -185,7 +185,7 @@ final readonly class DocumentsRepository
         return $this->connection->transactional(function () use ($document, $locale, $content): ?DocumentContent {
             $this->connection->executeStatement(
                 \sprintf(
-                    'UPDATE %s SET %s = :doc_content, %s = CURRENT_TIMESTAMP(6)
+                    'UPDATE %s SET %s = :doc_content, %s = CURRENT_TIMESTAMP
                  WHERE %s = :doc_id AND %s = :lang_id AND BINARY %s <> BINARY :compared_content',
                     self::CONTENT_TABLE_NAME,
                     self::FIELD_DOC_CONTENT,
@@ -241,8 +241,8 @@ final readonly class DocumentsRepository
     private function createLocale(Document $doc, string $langId, string $content): ?DocumentContent
     {
         $inserted = $this->connection->executeStatement(
-            'INSERT INTO documents_content (doc_id, translit, locale, doc_content, updated_at)
-             SELECT id, translit, :lang_id, :doc_content, CURRENT_TIMESTAMP(6)
+            'INSERT INTO documents_content (doc_id, locale, doc_content, updated_at)
+             SELECT id, :lang_id, :doc_content, CURRENT_TIMESTAMP
              FROM documents WHERE id = :doc_id',
             ['doc_id' => $doc->getId(), 'lang_id' => $langId, 'doc_content' => $content],
         );

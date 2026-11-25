@@ -47,6 +47,7 @@ final class GraphQlControllerTest extends WebTestCase
         self::assertSame(['kind' => 'ENUM', 'name' => 'DocumentType', 'ofType' => null], $fields['type']);
 
         $queries = array_column($schema['query']['fields'], 'type', 'name');
+        self::assertSame(['name' => 'Document', 'kind' => 'OBJECT'], $queries['documentsList']['ofType']['ofType']['ofType']);
         self::assertSame(['name' => 'LocaleCode', 'kind' => 'SCALAR'], $queries['documentLocales']['ofType']['ofType']['ofType']);
     }
 
@@ -72,11 +73,11 @@ final class GraphQlControllerTest extends WebTestCase
 
         $client = self::createClient();
         $expected = [];
-        foreach (['documents' => '/docs', 'documentTypes' => '/docs/types', 'documentLocales' => '/docs/locales'] as $field => $path) {
+        foreach (['documentsList' => '/docs', 'documentTypes' => '/docs/types', 'documentLocales' => '/docs/locales'] as $field => $path) {
             $client->request('GET', $path);
             self::assertResponseIsSuccessful();
             $expected[$field] = $client->getInternalResponse()->toArray()['data'];
-            if ('documents' === $field) {
+            if ('documentsList' === $field) {
                 foreach ($expected[$field] as &$document) {
                     foreach (['created_at', 'updated_at'] as $timestamp) {
                         $document[$timestamp] = (new \DateTimeImmutable($document[$timestamp], new \DateTimeZone('UTC')))
@@ -92,7 +93,7 @@ final class GraphQlControllerTest extends WebTestCase
 
         $client->jsonRequest('POST', '/graphql', ['query' => <<<'GRAPHQL'
             {
-                documents { id type_id translit created_at updated_at }
+                documentsList { id type_id translit created_at updated_at }
                 documentTypes
                 documentLocales
             }

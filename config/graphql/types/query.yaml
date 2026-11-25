@@ -5,6 +5,9 @@ Query:
             documents:
                 type: '[Document!]!'
                 resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documents()'
+            documentsList:
+                type: '[Document!]!'
+                resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documents()'
             documentTypes:
                 type: '[DocumentType!]!'
                 resolve: '@=service("NuraBiz\\SiteContent\\GraphQl\\DocumentQueries").documentTypes()'

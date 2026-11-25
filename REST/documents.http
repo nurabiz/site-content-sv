@@ -70,3 +70,7 @@ DELETE {{baseUrl}}/docs/{{siteContentDocId}}
         client.global.clear("siteContentDocTranslit");
     }
 %}
+
+
+###
+GET {{baseUrl}}/graphql

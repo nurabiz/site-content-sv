@@ -4,16 +4,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "query": "query DocumentLists { documents { __typename id type_id type translit created_at updated_at } documentTypes documentLocales }"
-}
-
-### Список документов
-POST {{baseUrl}}/graphql
-Content-Type: application/json
-Accept: application/json
-
-{
-  "query": "query Documents { documents { __typename id type_id type translit created_at updated_at } }"
+  "query": "query DocumentLists { documentsList { __typename id type_id type translit created_at updated_at } documentTypes documentLocales }"
 }
 
 ### Список типов документов

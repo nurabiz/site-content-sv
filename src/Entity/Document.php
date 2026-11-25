@@ -41,7 +41,7 @@ readonly class Document
             DocumentsRepository::FIELD_UPDATED_AT => $this->updatedAt,
         ];
         if (null !== $this->locales) {
-            $data['locales'] = array_map(static fn (DocumentContent $locale): array => $locale->toArray(), $this->locales);
+            $data['locales'] = \array_map(static fn (DocumentContent $locale): array => $locale->toArray(), $this->locales);
         }
 
         return $data;

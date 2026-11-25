@@ -13,6 +13,7 @@ final readonly class DocumentContent
         private string $content,
         private string $createdAt,
         private string $updatedAt,
+        private int $updatedBy,
     ) {
     }
 
@@ -25,6 +26,7 @@ final readonly class DocumentContent
             'doc_content' => $this->content,
             'created_at' => $this->createdAt,
             'updated_at' => $this->updatedAt,
+            'updated_by' => $this->updatedBy,
         ];
     }
 }

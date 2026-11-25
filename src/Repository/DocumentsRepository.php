@@ -23,9 +23,10 @@ final readonly class DocumentsRepository
     public const string FIELD_DOC_CONTENT = 'doc_content';
     public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
+    public const string FIELD_UPDATED_BY = 'updated_by';
 
     private const string DOCUMENT_COLUMNS = self::FIELD_ID . ', ' . self::FIELD_TYPE_ID . ', ' . self::FIELD_SLUG . ', ' . self::FIELD_CREATED_AT . ', ' . self::FIELD_UPDATED_AT;
-    private const string CONTENT_COLUMNS = self::FIELD_ID . ', ' . self::FIELD_LOCALE . ', ' . self::FIELD_DOC_CONTENT . ', ' . self::FIELD_CREATED_AT . ', ' . self::FIELD_UPDATED_AT;
+    private const string CONTENT_COLUMNS = self::FIELD_ID . ', ' . self::FIELD_LOCALE . ', ' . self::FIELD_DOC_CONTENT . ', ' . self::FIELD_CREATED_AT . ', ' . self::FIELD_UPDATED_AT . ', ' . self::FIELD_UPDATED_BY;
 
     public function __construct(
         private Connection             $connection,

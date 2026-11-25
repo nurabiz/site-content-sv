@@ -16,6 +16,7 @@ final readonly class DocumentContentView
         public string $doc_content,
         public \DateTimeImmutable $created_at,
         public \DateTimeImmutable $updated_at,
+        public int $updated_by,
     ) {
     }
 
@@ -30,6 +31,7 @@ final readonly class DocumentContentView
             $content[DocumentsRepository::FIELD_DOC_CONTENT],
             new \DateTimeImmutable($content[DocumentsRepository::FIELD_CREATED_AT], $timezone),
             new \DateTimeImmutable($content[DocumentsRepository::FIELD_UPDATED_AT], $timezone),
+            $content[DocumentsRepository::FIELD_UPDATED_BY],
         );
     }
 }

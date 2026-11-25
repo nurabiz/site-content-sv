@@ -19,6 +19,7 @@ final class DocumentContentFactory
             $row[DocumentsRepository::FIELD_DOC_CONTENT],
             $row[DocumentsRepository::FIELD_CREATED_AT],
             $row[DocumentsRepository::FIELD_UPDATED_AT],
+            (int) $row[DocumentsRepository::FIELD_UPDATED_BY],
         );
     }
 }

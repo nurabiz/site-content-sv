@@ -66,3 +66,4 @@ DocumentContent:
             doc_content: { type: 'String!' }
             created_at: { type: 'DateTime!' }
             updated_at: { type: 'DateTime!' }
+            updated_by: { type: 'Int!' }

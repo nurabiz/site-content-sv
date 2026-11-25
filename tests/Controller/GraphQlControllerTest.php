@@ -54,6 +54,10 @@ final class GraphQlControllerTest extends WebTestCase
             ['kind' => 'NON_NULL', 'name' => null, 'ofType' => ['name' => 'LocaleCode', 'kind' => 'SCALAR']],
             $contentFields['locale'],
         );
+        self::assertSame(
+            ['kind' => 'NON_NULL', 'name' => null, 'ofType' => ['name' => 'Int', 'kind' => 'SCALAR']],
+            $contentFields['updated_by'],
+        );
 
         $queries = array_column($schema['query']['fields'], 'type', 'name');
         self::assertSame(['name' => 'Document', 'kind' => 'OBJECT'], $queries['documentsList']['ofType']['ofType']['ofType']);

@@ -13,7 +13,7 @@ final class DocumentContentFactory
     public function fromRow(Document $doc, array $row): DocumentContent
     {
         return new DocumentContent(
-            (int) $row[DocumentsRepository::FIELD_ID],
+            (int)$row[DocumentsRepository::FIELD_ID],
             $doc->getId(),
             $row[DocumentsRepository::FIELD_LOCALE],
             $row[DocumentsRepository::FIELD_DOC_CONTENT],

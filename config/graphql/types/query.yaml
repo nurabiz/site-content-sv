@@ -33,7 +33,7 @@ Document:
             id: { type: 'Int!' }
             type_id: { type: 'Int!' }
             type: { type: DocumentType }
-            translit: { type: 'String!' }
+            slug: { type: 'String!' }
             created_at: { type: 'DateTime!' }
             updated_at: { type: 'DateTime!' }
 
@@ -62,7 +62,7 @@ DocumentContent:
         fields:
             id: { type: 'Int!' }
             doc_id: { type: 'Int!' }
-            lang_id: { type: 'LocaleCode!' }
+            locale: { type: 'LocaleCode!' }
             doc_content: { type: 'String!' }
             created_at: { type: 'DateTime!' }
             updated_at: { type: 'DateTime!' }

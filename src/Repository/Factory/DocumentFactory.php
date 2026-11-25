@@ -12,9 +12,9 @@ final class DocumentFactory
     public function fromRow(array $row): Document
     {
         return new Document(
-            (int) $row[DocumentsRepository::FIELD_ID],
-            (int) $row[DocumentsRepository::FIELD_TYPE_ID],
-            $row[DocumentsRepository::FIELD_TRANSLIT],
+            (int)$row[DocumentsRepository::FIELD_ID],
+            (int)$row[DocumentsRepository::FIELD_TYPE_ID],
+            $row[DocumentsRepository::FIELD_SLUG],
             $row[DocumentsRepository::FIELD_CREATED_AT],
             $row[DocumentsRepository::FIELD_UPDATED_AT],
         );

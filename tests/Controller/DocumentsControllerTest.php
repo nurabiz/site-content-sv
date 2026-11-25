@@ -8,39 +8,39 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class DocumentsControllerTest extends WebTestCase
 {
-    public function testDocumentsWithCatalogLocalesCannotShareTranslit(): void
+    public function testDocumentsWithCatalogLocalesCannotShareSlug(): void
     {
         if (!str_ends_with((string) parse_url($_SERVER['DATABASE_URL'] ?? '', PHP_URL_PATH), '_test')) {
             self::markTestSkipped('Set DATABASE_URL to a prepared database with a name ending in _test.');
         }
 
         $client = self::createClient();
-        $translit = 'unique-locale-'.bin2hex(random_bytes(6));
+        $slug = 'unique-locale-'.bin2hex(random_bytes(6));
         $documents = [];
 
         try {
-            foreach ([$translit, $translit.'-second'] as $slug) {
-                $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $slug, 'locales' => ['en' => 'en']]);
+            foreach ([$slug, $slug.'-second'] as $slug) {
+                $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'slug' => $slug, 'locales' => ['en' => 'en']]);
                 self::assertResponseStatusCodeSame(201);
                 $documents[] = $client->getResponse()->headers->get('Location');
             }
 
-            $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => $translit, 'locales' => ['en' => 'Duplicate']]);
+            $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'slug' => $slug, 'locales' => ['en' => 'Duplicate']]);
             self::assertResponseStatusCodeSame(409);
 
-            $client->jsonRequest('PUT', $documents[1], ['type_id' => 1, 'translit' => $translit, 'locales' => ['en' => 'Duplicate']]);
+            $client->jsonRequest('PUT', $documents[1], ['type_id' => 1, 'slug' => $slug, 'locales' => ['en' => 'Duplicate']]);
             self::assertResponseStatusCodeSame(409);
 
-            $client->request('GET', '/docs/'.$translit.'/en');
+            $client->request('GET', '/docs/'.$slug.'/en');
             self::assertResponseIsSuccessful();
             self::assertSame('en', $client->getInternalResponse()->toArray()['data']['locales'][0]['doc_content']);
 
-            $renamed = $translit.'-renamed';
-            $client->jsonRequest('PUT', $documents[0], ['type_id' => 1, 'translit' => $renamed]);
+            $renamed = $slug.'-renamed';
+            $client->jsonRequest('PUT', $documents[0], ['type_id' => 1, 'slu' => $renamed]);
             self::assertResponseIsSuccessful();
             $client->request('GET', '/docs/'.$renamed.'/en');
             self::assertResponseIsSuccessful();
-            $client->request('GET', '/docs/'.$translit.'/en');
+            $client->request('GET', '/docs/'.$slug.'/en');
             self::assertResponseStatusCodeSame(404);
         } finally {
             foreach ($documents as $document) {
@@ -61,10 +61,10 @@ final class DocumentsControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertContains('rules', $client->getInternalResponse()->toArray()['data']);
 
-        $client->jsonRequest('POST', '/docs', ['type_id' => 999999, 'translit' => 'invalid']);
+        $client->jsonRequest('POST', '/docs', ['type_id' => 999999, 'slug' => 'invalid']);
         self::assertResponseStatusCodeSame(422);
 
-        $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'translit' => 'crud-test']);
+        $client->jsonRequest('POST', '/docs', ['type_id' => 1, 'slug' => 'crud-test']);
         self::assertResponseStatusCodeSame(201);
         $doc = $client->getResponse()->headers->get('Location');
         $createdDocument = $client->getInternalResponse()->toArray()['data'];
@@ -75,17 +75,17 @@ final class DocumentsControllerTest extends WebTestCase
         try {
             $client->request('GET', '/docs');
             self::assertResponseIsSuccessful();
-            self::assertContains('crud-test', array_column($client->getInternalResponse()->toArray()['data'], 'translit'));
+            self::assertContains('crud-test', array_column($client->getInternalResponse()->toArray()['data'], 'slug'));
 
-            $client->jsonRequest('PUT', $doc, ['type_id' => 1, 'translit' => 'crud-test-updated']);
+            $client->jsonRequest('PUT', $doc, ['type_id' => 1, 'slug' => 'crud-test-updated']);
             self::assertResponseIsSuccessful();
             $client->request('GET', $doc);
             $updatedDocument = $client->getInternalResponse()->toArray()['data'];
-            self::assertSame('crud-test-updated', $updatedDocument['translit']);
+            self::assertSame('crud-test-updated', $updatedDocument['slug']);
             self::assertSame($createdDocument['created_at'], $updatedDocument['created_at']);
             self::assertGreaterThanOrEqual($createdDocument['updated_at'], $updatedDocument['updated_at']);
 
-            $documentData = ['type_id' => 1, 'translit' => 'crud-test-updated'];
+            $documentData = ['type_id' => 1, 'slug' => 'crud-test-updated'];
             $client->jsonRequest('PUT', $doc, $documentData + ['locales' => ['invalid' => '']]);
             self::assertResponseStatusCodeSame(422);
 

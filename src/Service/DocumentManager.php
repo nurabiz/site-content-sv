@@ -44,10 +44,10 @@ final readonly class DocumentManager
         return $doc->toArray();
     }
 
-    public function getByTranslitAndLocale(string $translit, string $langId): array
+    public function getBySlugAndLocale(string $slug, string $langId): array
     {
         $langId = strtolower($langId);
-        $matches = $this->docs->findByTranslitAndLocale($translit, $langId);
+        $matches = $this->docs->findBySlugAndLocale($slug, $langId);
         $doc = $matches[0] ?? throw new NotFoundHttpException('Document not found.');
         $localized = $this->docs->documentGetLocale($doc->getId(), $langId)
             ?? throw new NotFoundHttpException('Document locale not found.');
@@ -79,15 +79,15 @@ final readonly class DocumentManager
             if (null === $id) {
                 return $this->docs->documentCreate(
                     $dto->type_id,
-                    $dto->translit,
+                    $dto->slug,
                     array_replace(array_fill_keys($this->locales->list(), ''), $locales),
                 );
             }
 
-            return $this->docs->documentUpdate($id, $dto->type_id, $dto->translit, $locales)
+            return $this->docs->documentUpdate($id, $dto->type_id, $dto->slug, $locales)
                 ?? throw new NotFoundHttpException('Document not found.');
         } catch (UniqueConstraintViolationException $exception) {
-            throw new ConflictHttpException('This document translit already exists.', $exception);
+            throw new ConflictHttpException('This document slug already exists.', $exception);
         }
     }
 

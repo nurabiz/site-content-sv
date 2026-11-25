@@ -32,7 +32,7 @@ final readonly class DocumentQueries
                 $document['id'],
                 $document['type_id'],
                 null === $type ? null : DocumentType::from($type),
-                $document['translit'],
+                $document['slug'],
                 new \DateTimeImmutable($document['created_at'], new \DateTimeZone('UTC')),
                 new \DateTimeImmutable($document['updated_at'], new \DateTimeZone('UTC')),
             );

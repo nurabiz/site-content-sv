@@ -1,6 +1,6 @@
 @json = application/json
 @siteContentDocId = 1
-@siteContentDocTranslit = terms_of_use
+@siteContentDocSlug = terms_of_use
 
 # Измените baseUrl при необходимости. Запускайте запросы сверху вниз.
 # Запросы записи и удаления используют ID документа, созданного в этом файле.
@@ -24,7 +24,7 @@ Content-Type: {{json}}
 
 {
   "type_id": 1,
-  "translit": "rest-example-{{$uuid}}",
+  "slug": "rest-example-{{$uuid}}",
   "locales": {
     "en": "Example document",
     "uk": "Приклад документа"
@@ -34,7 +34,7 @@ Content-Type: {{json}}
 > {%
     if (response.status === 201) {
         client.global.set("siteContentDocId", response.body.data.id);
-        client.global.set("siteContentDocTranslit", response.body.data.translit);
+        client.global.set("siteContentDocSlug", response.body.data.slug);
     }
 %}
 
@@ -42,8 +42,8 @@ Content-Type: {{json}}
 GET {{baseUrl}}/docs/{{siteContentDocId}}
 Accept: {{json}}
 
-### Найти документ по translit и языку
-GET {{baseUrl}}/docs/{{siteContentDocTranslit}}/en
+### Найти документ по slug и языку
+GET {{baseUrl}}/docs/{{siteContentDocSlug}}/en
 Accept: {{json}}
 
 ### Сохранить документ и тексты локалей
@@ -53,7 +53,7 @@ Content-Type: {{json}}
 
 {
   "type_id": 1,
-  "translit": "{{siteContentDocTranslit}}",
+  "slug": "{{siteContentDocSlug}}",
   "locales": {
     "en": "Updated example document",
     "ru": "яяяяя",
@@ -67,10 +67,6 @@ DELETE {{baseUrl}}/docs/{{siteContentDocId}}
 > {%
     if (response.status === 204) {
         client.global.clear("siteContentDocId");
-        client.global.clear("siteContentDocTranslit");
+        client.global.clear("siteContentDocSlug");
     }
 %}
-
-
-###
-GET {{baseUrl}}/graphql

@@ -12,7 +12,7 @@ final readonly class DocumentContentView
     public function __construct(
         public int $id,
         public int $doc_id,
-        public string $lang_id,
+        public string $locale,
         public string $doc_content,
         public \DateTimeImmutable $created_at,
         public \DateTimeImmutable $updated_at,

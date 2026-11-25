@@ -28,6 +28,9 @@ final class GraphQlControllerTest extends WebTestCase
                 document: __type(name: "Document") {
                     fields { name type { kind name ofType { name kind } } }
                 }
+                content: __type(name: "DocumentContent") {
+                    fields { name type { kind name ofType { name kind } } }
+                }
                 query: __type(name: "Query") {
                     fields { name type { ofType { ofType { ofType { name kind } } } } }
                 }
@@ -38,13 +41,19 @@ final class GraphQlControllerTest extends WebTestCase
         $schema = $client->getInternalResponse()->toArray()['data'];
         $fields = array_column($schema['document']['fields'], 'type', 'name');
 
-        foreach (['id' => 'Int', 'type_id' => 'Int', 'translit' => 'String', 'created_at' => 'DateTime', 'updated_at' => 'DateTime'] as $field => $type) {
+        foreach (['id' => 'Int', 'type_id' => 'Int', 'slug' => 'String', 'created_at' => 'DateTime', 'updated_at' => 'DateTime'] as $field => $type) {
             self::assertSame(
                 ['kind' => 'NON_NULL', 'name' => null, 'ofType' => ['name' => $type, 'kind' => 'SCALAR']],
                 $fields[$field],
             );
         }
         self::assertSame(['kind' => 'ENUM', 'name' => 'DocumentType', 'ofType' => null], $fields['type']);
+
+        $contentFields = array_column($schema['content']['fields'], 'type', 'name');
+        self::assertSame(
+            ['kind' => 'NON_NULL', 'name' => null, 'ofType' => ['name' => 'LocaleCode', 'kind' => 'SCALAR']],
+            $contentFields['locale'],
+        );
 
         $queries = array_column($schema['query']['fields'], 'type', 'name');
         self::assertSame(['name' => 'Document', 'kind' => 'OBJECT'], $queries['documentsList']['ofType']['ofType']['ofType']);
@@ -93,7 +102,7 @@ final class GraphQlControllerTest extends WebTestCase
 
         $client->jsonRequest('POST', '/graphql', ['query' => <<<'GRAPHQL'
             {
-                documentsList { id type_id translit created_at updated_at }
+                documentsList { id type_id slug created_at updated_at }
                 documentTypes
                 documentLocales
             }

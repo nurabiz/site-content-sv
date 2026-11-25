@@ -13,7 +13,7 @@ final readonly class DocDto
         public int $type_id,
         #[Assert\NotBlank(normalizer: 'trim')]
         #[Assert\Length(max: 255, countUnit: Assert\Length::COUNT_CODEPOINTS)]
-        public string $translit,
+        public string $slug,
         #[Assert\All([
             new Assert\NotNull(),
             new Assert\Type('string'),

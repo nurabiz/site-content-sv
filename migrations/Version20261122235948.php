@@ -25,11 +25,11 @@ final class Version20261122235948 extends AbstractMigration
             CREATE TABLE documents (
                 id INT NOT NULL AUTO_INCREMENT,
                 type_id INT NOT NULL DEFAULT 0,
-                translit VARCHAR(255) NOT NULL,
+                slug VARCHAR(255) NOT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY uniq_documents_translit (translit)
+                UNIQUE KEY uniq_documents_slug (slug)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             SQL);
         $this->addSql(<<<'SQL'

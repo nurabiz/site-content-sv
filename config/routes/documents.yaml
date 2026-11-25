@@ -19,9 +19,9 @@ docs_locales:
     defaults:
         _format: json
 
-doc_get_by_translit:
-    path: /docs/{translit}/{locale}
-    controller: NuraBiz\SiteContent\Controller\DocumentsController::getByTranslit
+doc_get_by_slug:
+    path: /docs/{slug}/{locale}
+    controller: NuraBiz\SiteContent\Controller\DocumentsController::getBySlug
     methods: GET
     defaults:
         _format: json

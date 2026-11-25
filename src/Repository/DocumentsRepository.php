@@ -17,61 +17,75 @@ final readonly class DocumentsRepository
 
     public const string FIELD_ID = 'id';
     public const string FIELD_TYPE_ID = 'type_id';
-    public const string FIELD_TRANSLIT = 'translit';
+    public const string FIELD_SLUG = 'slug';
     public const string FIELD_DOC_ID = 'doc_id';
     public const string FIELD_LOCALE = 'locale';
     public const string FIELD_DOC_CONTENT = 'doc_content';
     public const string FIELD_CREATED_AT = 'created_at';
     public const string FIELD_UPDATED_AT = 'updated_at';
 
-    private const string DOCUMENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_TYPE_ID.', '.self::FIELD_TRANSLIT.', '.self::FIELD_CREATED_AT.', '.self::FIELD_UPDATED_AT;
-    private const string CONTENT_COLUMNS = self::FIELD_ID.', '.self::FIELD_LOCALE.', '.self::FIELD_DOC_CONTENT.', '.self::FIELD_CREATED_AT.', '.self::FIELD_UPDATED_AT;
+    private const string DOCUMENT_COLUMNS = self::FIELD_ID . ', ' . self::FIELD_TYPE_ID . ', ' . self::FIELD_SLUG . ', ' . self::FIELD_CREATED_AT . ', ' . self::FIELD_UPDATED_AT;
+    private const string CONTENT_COLUMNS = self::FIELD_ID . ', ' . self::FIELD_LOCALE . ', ' . self::FIELD_DOC_CONTENT . ', ' . self::FIELD_CREATED_AT . ', ' . self::FIELD_UPDATED_AT;
 
     public function __construct(
-        private Connection      $connection,
-        private DocumentFactory $docsFactory,
+        private Connection             $connection,
+        private DocumentFactory        $docsFactory,
         private DocumentContentFactory $documentContentFactory,
-    ) {
+    )
+    {
     }
 
-    /** @return list<Document> */
+    /** @return Document[] */
     public function list(): array
     {
         return \array_map($this->docsFactory->fromRow(...), $this->connection->fetchAllAssociative(
-            'SELECT '.self::DOCUMENT_COLUMNS.' FROM '.self::TABLE_NAME.' ORDER BY '.self::FIELD_ID,
+            'SELECT ' . self::DOCUMENT_COLUMNS . ' FROM ' . self::TABLE_NAME . ' ORDER BY ' . self::FIELD_ID,
         ));
     }
 
     public function find(int $id): ?Document
     {
-        $row = $this->connection->fetchAssociative(\sprintf('SELECT %s FROM %s WHERE %s = :id', self::DOCUMENT_COLUMNS, self::TABLE_NAME, self::FIELD_ID), ['id' => $id]);
+        $row = $this->connection->fetchAssociative(
+            \sprintf('SELECT %s FROM %s WHERE %s = :id', self::DOCUMENT_COLUMNS, self::TABLE_NAME, self::FIELD_ID),
+            [
+                'id' => $id
+            ]
+        );
 
         return false === $row ? null : $this->docsFactory->fromRow($row);
     }
 
-    /** @return list<Document> */
-    public function findByTranslitAndLocale(string $translit, string $langId): array
+    /**
+     * @return Document[]
+     */
+    public function findBySlugAndLocale(string $slug, string $locale): array
     {
         return array_map($this->docsFactory->fromRow(...), $this->connection->fetchAllAssociative(
-            'SELECT d.id, d.type_id, d.translit, d.created_at, d.updated_at
+            'SELECT d.id, d.type_id, d.slug, d.created_at, d.updated_at
              FROM documents_content c
              JOIN documents d ON d.id = c.doc_id
-             WHERE d.translit = :translit AND c.locale = :lang_id',
-            ['translit' => $translit, 'lang_id' => $langId],
+             WHERE d.slug = :slug AND c.locale = :locale',
+            [
+                'slug' => $slug,
+                'locale' => $locale
+            ],
         ));
     }
 
     /** @param array<string, string> $locales */
-    public function documentCreate(int $typeId, string $translit, array $locales = []): Document
+    public function documentCreate(int $typeId, string $slug, array $locales = []): Document
     {
-        return $this->connection->transactional(function () use ($typeId, $translit, $locales): Document {
-            $row = [self::FIELD_TYPE_ID => $typeId, self::FIELD_TRANSLIT => $translit];
+        return $this->connection->transactional(function () use ($typeId, $slug, $locales): Document {
+
             $this->connection->executeStatement(
-                \sprintf('INSERT INTO %s (%s, %s) VALUES (:type_id, :translit)', self::TABLE_NAME, self::FIELD_TYPE_ID, self::FIELD_TRANSLIT),
-                $row,
+                \sprintf('INSERT INTO %s (%s, %s) VALUES (:type_id, :slug)', self::TABLE_NAME, self::FIELD_TYPE_ID, self::FIELD_SLUG),
+                [
+                    'type_id' => $typeId,
+                    'slug' => $slug,
+                ],
             );
 
-            $id = (int) $this->connection->lastInsertId();
+            $id = (int)$this->connection->lastInsertId();
             $doc = $this->find($id) ?? throw new \LogicException('The inserted document could not be read.');
             $this->writeLocales($doc, $locales);
 
@@ -80,12 +94,14 @@ final readonly class DocumentsRepository
     }
 
     /** @param array<string, string> $locales */
-    public function documentUpdate(int $id, int $typeId, string $translit, array $locales = []): ?Document
+    public function documentUpdate(int $id, int $typeId, string $slug, array $locales = []): ?Document
     {
-        return $this->connection->transactional(function () use ($id, $typeId, $translit, $locales): ?Document {
+        return $this->connection->transactional(function () use ($id, $typeId, $slug, $locales): ?Document {
             $row = $this->connection->fetchAssociative(
                 \sprintf('SELECT %s FROM %s WHERE %s = :id FOR UPDATE', self::FIELD_ID, self::TABLE_NAME, self::FIELD_ID),
-                ['id' => $id],
+                [
+                    'id' => $id,
+                ],
             );
             if (false === $row) {
                 return null;
@@ -93,14 +109,17 @@ final readonly class DocumentsRepository
 
             $this->connection->executeStatement(
                 \sprintf(
-                    'UPDATE %s SET %s = :type_id, %s = :translit, %s = CURRENT_TIMESTAMP WHERE %s = :id',
+                    'UPDATE %s SET %s = :type_id, %s = :slug, %s = CURRENT_TIMESTAMP WHERE %s = :id',
                     self::TABLE_NAME,
                     self::FIELD_TYPE_ID,
-                    self::FIELD_TRANSLIT,
+                    self::FIELD_SLUG,
                     self::FIELD_UPDATED_AT,
                     self::FIELD_ID,
                 ),
-                ['type_id' => $typeId, 'translit' => $translit, 'id' => $id],
+                [
+                    'type_id' => $typeId,
+                    'slug' => $slug,
+                    'id' => $id],
             );
 
             $doc = $this->find($id) ?? throw new \LogicException('The updated document could not be read.');
@@ -116,7 +135,10 @@ final readonly class DocumentsRepository
         foreach ($locales as $langId => $content) {
             $id = $this->connection->fetchOne(
                 'SELECT id FROM documents_content WHERE doc_id = :doc_id AND locale = :locale FOR UPDATE',
-                ['doc_id' => $doc->getId(), 'locale' => $langId],
+                [
+                    'doc_id' => $doc->getId(),
+                    'locale' => $langId
+                ],
             );
 
             if (false === $id) {
@@ -165,7 +187,7 @@ final readonly class DocumentsRepository
 
         $row = $this->connection->fetchAssociative(
             \sprintf(
-                'SELECT %s FROM %s WHERE %s = :doc_id AND %s = :lang_id',
+                'SELECT %s FROM %s WHERE %s = :doc_id AND %s = :locale',
                 self::CONTENT_COLUMNS,
                 self::CONTENT_TABLE_NAME,
                 self::FIELD_DOC_ID,
@@ -173,7 +195,7 @@ final readonly class DocumentsRepository
             ),
             [
                 'doc_id' => $docId,
-                'lang_id' => $langId,
+                'locale' => $langId,
             ],
         );
 
@@ -186,7 +208,7 @@ final readonly class DocumentsRepository
             $this->connection->executeStatement(
                 \sprintf(
                     'UPDATE %s SET %s = :doc_content, %s = CURRENT_TIMESTAMP
-                 WHERE %s = :doc_id AND %s = :lang_id AND BINARY %s <> BINARY :compared_content',
+                 WHERE %s = :doc_id AND %s = :locale AND BINARY %s <> BINARY :compared_content',
                     self::CONTENT_TABLE_NAME,
                     self::FIELD_DOC_CONTENT,
                     self::FIELD_UPDATED_AT,
@@ -197,7 +219,7 @@ final readonly class DocumentsRepository
                 [
                     'doc_content' => $content,
                     'doc_id' => $document->getId(),
-                    'lang_id' => $locale,
+                    'locale' => $locale,
                     'compared_content' => $content,
                 ],
             );
@@ -219,7 +241,7 @@ final readonly class DocumentsRepository
             ['doc_id' => $doc->getId()],
         );
 
-        return array_map(fn (array $row): DocumentContent => $this->documentContentFactory->fromRow($doc, $row), $rows);
+        return array_map(fn(array $row): DocumentContent => $this->documentContentFactory->fromRow($doc, $row), $rows);
     }
 
     private function findForDoc(Document $doc, int $id): ?DocumentContent
@@ -238,20 +260,23 @@ final readonly class DocumentsRepository
         return false === $row ? null : $this->documentContentFactory->fromRow($doc, $row);
     }
 
-    private function createLocale(Document $doc, string $langId, string $content): ?DocumentContent
+    private function createLocale(Document $doc, string $locale, string $content): ?DocumentContent
     {
         $inserted = $this->connection->executeStatement(
             'INSERT INTO documents_content (doc_id, locale, doc_content, updated_at)
-             SELECT id, :lang_id, :doc_content, CURRENT_TIMESTAMP
+             SELECT id, :locale, :doc_content, CURRENT_TIMESTAMP
              FROM documents WHERE id = :doc_id',
-            ['doc_id' => $doc->getId(), 'lang_id' => $langId, 'doc_content' => $content],
+            [
+                'doc_id' => $doc->getId(),
+                'locale' => $locale,
+                'doc_content' => $content],
         );
 
         if (0 === $inserted) {
             return null;
         }
 
-        return $this->findForDoc($doc, (int) $this->connection->lastInsertId())
+        return $this->findForDoc($doc, (int)$this->connection->lastInsertId())
             ?? throw new \LogicException('The inserted document locale could not be read.');
     }
 }

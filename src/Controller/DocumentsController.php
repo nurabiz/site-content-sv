@@ -34,9 +34,9 @@ final class DocumentsController extends AbstractController
         return $this->json(['data' => $locales->list()]);
     }
 
-    public function getByTranslit(string $translit, string $locale): JsonResponse
+    public function getBySlug(string $slug, string $locale): JsonResponse
     {
-        return $this->json(['data' => $this->docs->getByTranslitAndLocale($translit, $locale)]);
+        return $this->json(['data' => $this->docs->getBySlugAndLocale($slug, $locale)]);
     }
 
     public function create(#[MapRequestPayload(acceptFormat: 'json')] DocDto $dto): JsonResponse

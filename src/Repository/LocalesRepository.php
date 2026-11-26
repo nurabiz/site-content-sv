@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NuraBiz\SiteContent\Repository;
 
-class DocumentLocalesRepository
+class LocalesRepository
 {
     public const string LOCALE_EN = 'en';
     public const string LOCALE_RU = 'ru';

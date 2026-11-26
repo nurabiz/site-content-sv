@@ -6,7 +6,7 @@ namespace NuraBiz\SiteContent\Controller;
 
 use NuraBiz\SiteContent\Dto\DocDto;
 use NuraBiz\SiteContent\Service\DocumentManager;
-use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
+use NuraBiz\SiteContent\Repository\LocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentTypesRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -29,7 +29,7 @@ final class DocumentsController extends AbstractController
         return $this->json(['data' => $types->list()]);
     }
 
-    public function locales(DocumentLocalesRepository $locales): JsonResponse
+    public function locales(LocalesRepository $locales): JsonResponse
     {
         return $this->json(['data' => $locales->list()]);
     }

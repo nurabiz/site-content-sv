@@ -1,0 +1,63 @@
+### Список новостей
+GET {{baseUrl}}/news
+Accept: application/json
+
+### Список новостей с пагинацией и фильтрами
+GET {{baseUrl}}/news?limit=20&offset=0&valid=true&client_type=0
+Accept: application/json
+
+
+@siteContentNewsId = 8000
+
+### Создать новость с локалями en, ru и uk
+POST {{baseUrl}}/news
+Content-Type: application/json
+Accept: application/json
+
+{
+  "valid": true,
+  "userid": 17,
+  "client_type": 0,
+  "start_at": "2026-11-26 12:00:00",
+  "finish_at": null,
+  "image": "news.png",
+  "updated_by": 17,
+  "locales": {
+    "uk": { "header": "Новина", "text": "Текст новини" }
+  }
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("siteContentNewsId", response.body.data.id);
+    }
+%}
+
+### Получить новость со всеми локалями
+GET {{baseUrl}}/news/{{siteContentNewsId}}
+Accept: application/json
+
+### Получить новость на украинском
+GET {{baseUrl}}/news/{{siteContentNewsId}}/uk
+Accept: application/json
+
+### Обновить новость и заголовок украинской локали
+PUT {{baseUrl}}/news/{{siteContentNewsId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "valid": true,
+  "userid": 17,
+  "client_type": 0,
+  "start_at": "2026-11-26 12:00:00",
+  "finish_at": null,
+  "image": "news-updated.png",
+  "updated_by": 42,
+  "locales": {
+    "uk": { "header": "Оновлена новина" }
+  }
+}
+
+### Удалить новость и её локали
+DELETE {{baseUrl}}/news/{{siteContentNewsId}}

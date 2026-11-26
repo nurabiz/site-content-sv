@@ -1,0 +1,32 @@
+@newsId = 4715
+@newsLocale = ru
+
+### Получить новость со всеми локалями
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query News($id: Int!) { news(id: $id) { id valid userid client_type created_at start_at finish_at image locales { news_id locale header text created_at updated_at updated_by } } }",
+  "variables": { "id": {{newsId}} }
+}
+
+### Получить новость на указанном языке
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query NewsLocalized($id: Int!, $locale: LocaleCode!) { newsLocalized(id: $id, locale: $locale) { id valid userid client_type created_at start_at finish_at image locales { news_id locale header text created_at updated_at updated_by } } }",
+  "variables": { "id": {{newsId}}, "locale": "{{newsLocale}}" }
+}
+
+### Список новостей с пагинацией и фильтрами
+POST {{baseUrl}}/graphql
+Content-Type: application/json
+Accept: application/json
+
+{
+  "query": "query NewsList($limit: Int!, $offset: Int!, $valid: Boolean, $clientType: Int) { newsList(limit: $limit, offset: $offset, valid: $valid, client_type: $clientType) { id valid client_type start_at finish_at image } }",
+  "variables": { "limit": 20, "offset": 0, "valid": null, "clientType": null }
+}

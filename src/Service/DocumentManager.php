@@ -8,7 +8,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use NuraBiz\SiteContent\Dto\DocDto;
 use NuraBiz\SiteContent\Entity\Document;
 use NuraBiz\SiteContent\Entity\DocumentContent;
-use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
+use NuraBiz\SiteContent\Repository\LocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentsRepository;
 use NuraBiz\SiteContent\Repository\DocumentTypesRepository;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -20,7 +20,7 @@ final readonly class DocumentManager
     public function __construct(
         private DocumentsRepository     $docs,
         private DocumentTypesRepository $types,
-        private DocumentLocalesRepository $locales,
+        private LocalesRepository       $locales,
     ) {
     }
 

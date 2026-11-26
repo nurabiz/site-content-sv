@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NuraBiz\SiteContent\GraphQl;
 
-use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
+use NuraBiz\SiteContent\Repository\LocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentsRepository;
 
 final readonly class DocumentContentView

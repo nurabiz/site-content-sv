@@ -1,0 +1,25 @@
+News:
+    type: object
+    config:
+        fields:
+            id: { type: 'Int!' }
+            valid: { type: Boolean }
+            userid: { type: 'Int!' }
+            client_type: { type: 'Int!' }
+            created_at: { type: DateTime }
+            start_at: { type: 'DateTime!' }
+            finish_at: { type: DateTime }
+            image: { type: String }
+            locales: { type: '[NewsContent!]!' }
+
+NewsContent:
+    type: object
+    config:
+        fields:
+            news_id: { type: 'Int!' }
+            locale: { type: 'LocaleCode!' }
+            header: { type: String }
+            text: { type: String }
+            created_at: { type: 'DateTime!' }
+            updated_at: { type: 'DateTime!' }
+            updated_by: { type: 'Int!' }

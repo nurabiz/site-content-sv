@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NuraBiz\SiteContent\GraphQl;
 
-use NuraBiz\SiteContent\Repository\DocumentLocalesRepository;
+use NuraBiz\SiteContent\Repository\LocalesRepository;
 use NuraBiz\SiteContent\Repository\DocumentsRepository;
 use NuraBiz\SiteContent\Repository\DocumentTypesRepository;
 use NuraBiz\SiteContent\Service\DocumentManager;
@@ -15,10 +15,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class DocumentQueries
 {
     public function __construct(
-        private DocumentManager $documents,
+        private DocumentManager         $documents,
         private DocumentTypesRepository $types,
-        private DocumentsRepository $contents,
-        private DocumentLocalesRepository $locales,
+        private DocumentsRepository     $contents,
+        private LocalesRepository       $locales,
     ) {
     }
 

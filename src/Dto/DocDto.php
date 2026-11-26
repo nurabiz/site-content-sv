@@ -20,6 +20,8 @@ final readonly class DocDto
             new Assert\Length(max: 65535, countUnit: Assert\Length::COUNT_BYTES),
         ])]
         public array $locales = [],
+        #[Assert\Range(min: 1, max: 2147483647)]
+        public ?int $updated_by = null,
     ) {
     }
 }

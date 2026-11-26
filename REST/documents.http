@@ -25,6 +25,7 @@ Content-Type: {{json}}
 {
   "type_id": 1,
   "slug": "rest-example-{{$uuid}}",
+  "updated_by": 42,
   "locales": {
     "en": "Example document",
     "uk": "Приклад документа"
@@ -54,6 +55,7 @@ Content-Type: {{json}}
 {
   "type_id": 1,
   "slug": "{{siteContentDocSlug}}",
+  "updated_by": 42,
   "locales": {
     "en": "Updated example document",
     "ru": "яяяяя",

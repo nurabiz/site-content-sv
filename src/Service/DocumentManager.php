@@ -81,10 +81,11 @@ final readonly class DocumentManager
                     $dto->type_id,
                     $dto->slug,
                     array_replace(array_fill_keys($this->locales->list(), ''), $locales),
+                    $dto->updated_by,
                 );
             }
 
-            return $this->docs->documentUpdate($id, $dto->type_id, $dto->slug, $locales)
+            return $this->docs->documentUpdate($id, $dto->type_id, $dto->slug, $locales, $dto->updated_by)
                 ?? throw new NotFoundHttpException('Document not found.');
         } catch (UniqueConstraintViolationException $exception) {
             throw new ConflictHttpException('This document slug already exists.', $exception);
